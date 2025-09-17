@@ -4,6 +4,7 @@
 
 A fitness app that redefines the functionality and ease of getting into fitness!
 
+<<<<<<< HEAD
 ## 🎯 **Project Overview**
 
 AdaptFitness is a comprehensive fitness tracking application built for the CPSC 491 Capstone Project. It combines workout tracking, nutrition logging, and progress analytics to help users achieve their fitness goals.
@@ -145,4 +146,7 @@ This is a CPSC 491 Capstone Project. For collaboration, please contact the proje
 ---
 
 *Built with ❤️ for CPSC 491 Capstone Project*
+=======
+# Hello
+>>>>>>> 9de05879 (Add hello to main branch)
 
