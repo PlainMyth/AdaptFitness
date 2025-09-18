@@ -1,3 +1,12 @@
+/**
+ * Meal Service
+ *
+ * This service handles all meal-related business logic including CRUD operations, nutritional calculations, and data validation.
+ *
+ * Key responsibilities:
+- Handle meal business logic\n * - Perform nutritional calculations\n * - Manage meal data persistence\n * - Provide nutrition-related utilities
+ */
+
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
