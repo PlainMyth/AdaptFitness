@@ -1,3 +1,12 @@
+/**
+ * Workout Entity
+ *
+ * This defines the database table structure for storing workout information. It represents all the workout data including exercises, sets, reps, and timestamps.
+ *
+ * Key responsibilities:
+- Store workout data and metadata\n * - Define relationships to users and exercises\n * - Track workout timestamps and progress\n * - Support workout categorization and tagging
+ */
+
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { User } from '../user/user.entity';
 

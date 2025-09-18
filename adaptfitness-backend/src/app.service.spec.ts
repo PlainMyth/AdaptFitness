@@ -1,3 +1,16 @@
+/**
+ * App Service Unit Tests
+ *
+ * This file contains unit tests for the AppService class.
+ * It tests the basic functionality of health checks and welcome messages.
+ *
+ * Test coverage:
+ * - Service instantiation and dependency injection
+ * - Health status endpoint functionality
+ * - Welcome message endpoint functionality
+ * - Response format validation
+ */
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppService } from './app.service';
 

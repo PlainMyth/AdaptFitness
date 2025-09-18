@@ -1,3 +1,12 @@
+/**
+ * Workout Service
+ *
+ * This service handles all workout-related business logic including CRUD operations, workout calculations, and data validation.
+ *
+ * Key responsibilities:
+- Handle workout business logic\n * - Perform workout calculations and validations\n * - Manage workout data persistence\n * - Provide workout-related utilities
+ */
+
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
