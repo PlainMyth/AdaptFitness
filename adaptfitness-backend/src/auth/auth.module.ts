@@ -1,3 +1,12 @@
+/**
+ * Authentication Module
+ *
+ * This module configures all authentication-related components including the controller, service, JWT strategy, and Passport configuration.
+ *
+ * Key responsibilities:
+- Configure authentication components\n * - Set up JWT strategy and Passport\n * - Register authentication services\n * - Export shared authentication utilities
+ */
+
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';

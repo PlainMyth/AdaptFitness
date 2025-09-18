@@ -1,3 +1,12 @@
+/**
+ * Authentication Data Transfer Objects
+ *
+ * These classes define the structure and validation rules for authentication data. DTOs ensure that incoming data is properly validated and typed before processing.
+ *
+ * Key responsibilities:
+- Define data structure for authentication requests\n * - Validate input data using decorators\n * - Provide type safety for authentication operations\n * - Define response structures for API responses
+ */
+
 import { IsEmail, IsString, MinLength } from 'class-validator';
 
 export class RegisterDto {
