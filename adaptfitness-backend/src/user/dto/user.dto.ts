@@ -1,3 +1,12 @@
+/**
+ * User Data Transfer Objects
+ *
+ * These classes define the structure and validation rules for user data. DTOs ensure that incoming user data is properly validated and typed before processing.
+ *
+ * Key responsibilities:
+- Define data structure for user requests\n * - Validate input data using decorators\n * - Provide type safety for user operations\n * - Define response structures for user data
+ */
+
 import { IsEmail, IsString, MinLength, IsOptional, IsDateString, IsNumber, IsEnum, IsBoolean } from 'class-validator';
 
 export class CreateUserDto {

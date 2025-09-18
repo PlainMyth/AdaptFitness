@@ -1,3 +1,12 @@
+/**
+ * Workout Controller
+ *
+ * This controller handles all HTTP requests related to workout tracking. It provides endpoints for creating, reading, updating, and deleting workout records.
+ *
+ * Key responsibilities:
+- Handle workout CRUD operations\n * - Validate workout data and permissions\n * - Provide workout tracking endpoints\n * - Manage workout-related business logic
+ */
+
 import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
 import { WorkoutService } from './workout.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
