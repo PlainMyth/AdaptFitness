@@ -7,7 +7,7 @@
 - Handle workout CRUD operations\n * - Validate workout data and permissions\n * - Provide workout tracking endpoints\n * - Manage workout-related business logic
  */
 
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Request, Query } from '@nestjs/common';
 import { WorkoutService } from './workout.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
@@ -27,6 +27,11 @@ export class WorkoutController {
   @Get()
   async findAll(@Request() req) {
     return this.workoutService.findAll(req.user.id);
+  }
+
+  @Get('streak/current')
+  async getCurrentStreak(@Request() req, @Query('tz') tz?: string) {
+    return this.workoutService.getCurrentStreakInTimeZone(req.user.id, tz);
   }
 
   @Get(':id')
