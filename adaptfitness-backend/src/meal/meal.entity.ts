@@ -1,3 +1,12 @@
+/**
+ * Meal Entity
+ *
+ * This defines the database table structure for storing meal information. It represents all the meal data including food items, nutritional information, and timestamps.
+ *
+ * Key responsibilities:
+- Store meal data and nutritional information\n * - Define relationships to users and food items\n * - Track meal timestamps and nutrition\n * - Support meal categorization and tracking
+ */
+
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { User } from '../user/user.entity';
 
