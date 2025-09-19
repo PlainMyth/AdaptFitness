@@ -113,7 +113,7 @@ export class WorkoutService {
       return { streak: 0 };
     }
 
-    // Walk backwards day by day while consecutive dates exist
+    // Walk backwards day by day while consecutive dates exist .
     while (true) {
       const nextKey = this.getKeyForDaysAgo(daysAgo + 1, tz);
       if (dateSet.has(nextKey)) {
