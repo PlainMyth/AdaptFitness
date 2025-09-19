@@ -1,3 +1,12 @@
+/**
+ * Workout Module
+ *
+ * This module configures all workout-related components including the controller, service, and entity. It also sets up the database repository for workout operations.
+ *
+ * Key responsibilities:
+- Configure workout-related components\n * - Set up database repository\n * - Register workout services\n * - Export shared workout utilities
+ */
+
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Workout } from './workout.entity';
