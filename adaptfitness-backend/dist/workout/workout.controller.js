@@ -16,28 +16,30 @@ exports.WorkoutController = void 0;
 const common_1 = require("@nestjs/common");
 const workout_service_1 = require("./workout.service");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
+const create_workout_dto_1 = require("./dto/create-workout.dto");
+const update_workout_dto_1 = require("./dto/update-workout.dto");
 let WorkoutController = class WorkoutController {
-    workoutService;
     constructor(workoutService) {
         this.workoutService = workoutService;
     }
-    async create(req, workoutData) {
-        return this.workoutService.create({
-            ...workoutData,
-            userId: req.user.id
-        });
+    async create(req, createWorkoutDto) {
+        createWorkoutDto.userId = req.user.id;
+        return this.workoutService.create(createWorkoutDto);
     }
     async findAll(req) {
         return this.workoutService.findAll(req.user.id);
     }
+    async getCurrentStreak(req, timeZone) {
+        return this.workoutService.getCurrentStreakInTimeZone(req.user.id, timeZone);
+    }
     async findOne(req, id) {
-        return this.workoutService.findOne(id, req.user.id);
+        return this.workoutService.findOne(id);
     }
     async update(req, id, updateData) {
-        return this.workoutService.update(id, req.user.id, updateData);
+        return this.workoutService.update(id, updateData);
     }
     async remove(req, id) {
-        await this.workoutService.remove(id, req.user.id);
+        await this.workoutService.remove(id);
         return { message: 'Workout deleted successfully' };
     }
 };
@@ -47,7 +49,7 @@ __decorate([
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:paramtypes", [Object, create_workout_dto_1.CreateWorkoutDto]),
     __metadata("design:returntype", Promise)
 ], WorkoutController.prototype, "create", null);
 __decorate([
@@ -57,6 +59,14 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], WorkoutController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)('streak/current'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Query)('tz')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], WorkoutController.prototype, "getCurrentStreak", null);
 __decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Request)()),
@@ -71,7 +81,7 @@ __decorate([
     __param(1, (0, common_1.Param)('id')),
     __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, String, Object]),
+    __metadata("design:paramtypes", [Object, String, update_workout_dto_1.UpdateWorkoutDto]),
     __metadata("design:returntype", Promise)
 ], WorkoutController.prototype, "update", null);
 __decorate([

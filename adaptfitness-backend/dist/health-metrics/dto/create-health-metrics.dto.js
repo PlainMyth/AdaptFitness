@@ -14,17 +14,6 @@ require("reflect-metadata");
 const class_validator_1 = require("class-validator");
 const class_transformer_1 = require("class-transformer");
 class CreateHealthMetricsDto {
-    currentWeight;
-    bodyFatPercentage;
-    goalWeight;
-    waterPercentage;
-    waistCircumference;
-    hipCircumference;
-    chestCircumference;
-    thighCircumference;
-    armCircumference;
-    neckCircumference;
-    notes;
 }
 exports.CreateHealthMetricsDto = CreateHealthMetricsDto;
 __decorate([

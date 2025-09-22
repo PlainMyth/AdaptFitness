@@ -19,7 +19,6 @@ const create_health_metrics_dto_1 = require("./dto/create-health-metrics.dto");
 const update_health_metrics_dto_1 = require("./dto/update-health-metrics.dto");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 let HealthMetricsController = class HealthMetricsController {
-    healthMetricsService;
     constructor(healthMetricsService) {
         this.healthMetricsService = healthMetricsService;
     }

@@ -18,39 +18,138 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const meal_entity_1 = require("./meal.entity");
 let MealService = class MealService {
-    mealRepository;
     constructor(mealRepository) {
         this.mealRepository = mealRepository;
     }
-    async create(mealData) {
-        const meal = this.mealRepository.create(mealData);
-        return this.mealRepository.save(meal);
+    async create(createMealDto) {
+        this.validateCreateMealDto(createMealDto);
+        const meal = this.mealRepository.create(createMealDto);
+        return await this.mealRepository.save(meal);
     }
     async findAll(userId) {
-        return this.mealRepository.find({
-            where: { userId },
-            order: { mealTime: 'DESC' }
+        return await this.mealRepository.find({
+            where: { user: { id: userId } },
+            order: { mealTime: 'DESC' },
         });
     }
-    async findOne(id, userId) {
+    async findOne(id) {
         const meal = await this.mealRepository.findOne({
-            where: { id, userId }
+            where: { id },
+            relations: ['user'],
         });
         if (!meal) {
-            throw new common_1.NotFoundException('Meal not found');
+            throw new common_1.NotFoundException(`Meal with ID ${id} not found`);
         }
         return meal;
     }
-    async update(id, userId, updateData) {
-        const meal = await this.findOne(id, userId);
-        Object.assign(meal, updateData);
-        return this.mealRepository.save(meal);
+    async update(id, updateMealDto) {
+        this.validateUpdateMealDto(updateMealDto);
+        const meal = await this.findOne(id);
+        Object.assign(meal, updateMealDto);
+        return await this.mealRepository.save(meal);
     }
-    async remove(id, userId) {
-        const result = await this.mealRepository.delete({ id, userId });
-        if (result.affected === 0) {
-            throw new common_1.NotFoundException('Meal not found');
+    async remove(id) {
+        const meal = await this.findOne(id);
+        await this.mealRepository.remove(meal);
+    }
+    async getCurrentStreakInTimeZone(userId, timeZone) {
+        const meals = await this.mealRepository.find({
+            where: { user: { id: userId } },
+            order: { mealTime: 'DESC' },
+        });
+        if (meals.length === 0) {
+            return { streak: 0, lastMealDate: null };
         }
+        const timeZoneToUse = timeZone || 'UTC';
+        const todayKey = this.getDateKeyInTimeZone(new Date(), timeZoneToUse);
+        let streak = 0;
+        let currentDateKey = todayKey;
+        const hasMealToday = meals.some(meal => meal.mealTime && this.getDateKeyInTimeZone(meal.mealTime, timeZoneToUse) === todayKey);
+        if (!hasMealToday) {
+            currentDateKey = this.getKeyForDaysAgo(1, timeZoneToUse);
+        }
+        for (let daysAgo = 0; daysAgo < 365; daysAgo++) {
+            const dateKey = this.getKeyForDaysAgo(daysAgo, timeZoneToUse);
+            const hasMealOnDate = meals.some(meal => meal.mealTime && this.getDateKeyInTimeZone(meal.mealTime, timeZoneToUse) === dateKey);
+            if (hasMealOnDate) {
+                streak++;
+            }
+            else {
+                break;
+            }
+        }
+        const lastMeal = meals.find(meal => meal.mealTime);
+        const lastMealDate = lastMeal ?
+            this.getDateKeyInTimeZone(lastMeal.mealTime, timeZoneToUse) : null;
+        return { streak, lastMealDate };
+    }
+    validateCreateMealDto(dto) {
+        if (!dto.name || dto.name.trim().length === 0) {
+            throw new common_1.BadRequestException('Meal name is required and cannot be empty');
+        }
+        if (!dto.description || dto.description.trim().length === 0) {
+            throw new common_1.BadRequestException('Meal description is required and cannot be empty');
+        }
+        if (!dto.mealTime) {
+            throw new common_1.BadRequestException('Meal time is required');
+        }
+        if (!dto.userId || dto.userId.trim().length === 0) {
+            throw new common_1.BadRequestException('User ID is required');
+        }
+        if (dto.totalCalories !== undefined && dto.totalCalories < 0) {
+            throw new common_1.BadRequestException('Total calories cannot be negative');
+        }
+        const mealTime = new Date(dto.mealTime);
+        if (isNaN(mealTime.getTime())) {
+            throw new common_1.BadRequestException('Invalid meal time format');
+        }
+    }
+    validateUpdateMealDto(dto) {
+        if (dto.name !== undefined && (!dto.name || dto.name.trim().length === 0)) {
+            throw new common_1.BadRequestException('Meal name cannot be empty');
+        }
+        if (dto.description !== undefined && (!dto.description || dto.description.trim().length === 0)) {
+            throw new common_1.BadRequestException('Meal description cannot be empty');
+        }
+        if (dto.mealTime !== undefined) {
+            const mealTime = new Date(dto.mealTime);
+            if (isNaN(mealTime.getTime())) {
+                throw new common_1.BadRequestException('Invalid meal time format');
+            }
+        }
+        if (dto.totalCalories !== undefined && dto.totalCalories < 0) {
+            throw new common_1.BadRequestException('Total calories cannot be negative');
+        }
+    }
+    getDateKeyInTimeZone(date, timeZone) {
+        var _a, _b, _c, _d, _e, _f;
+        try {
+            const formatter = new Intl.DateTimeFormat('en-CA', {
+                timeZone: timeZone,
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+            });
+            const parts = formatter.formatToParts(date);
+            const year = (_b = (_a = parts.find(p => p.type === 'year')) === null || _a === void 0 ? void 0 : _a.value) !== null && _b !== void 0 ? _b : '2025';
+            const month = (_d = (_c = parts.find(p => p.type === 'month')) === null || _c === void 0 ? void 0 : _c.value) !== null && _d !== void 0 ? _d : '01';
+            const day = (_f = (_e = parts.find(p => p.type === 'day')) === null || _e === void 0 ? void 0 : _e.value) !== null && _f !== void 0 ? _f : '01';
+            return `${year}-${month}-${day}`;
+        }
+        catch (error) {
+            const year = date.getUTCFullYear();
+            const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(date.getUTCDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+    }
+    getKeyForDaysAgo(daysAgo, timeZone) {
+        const now = new Date();
+        const todayKey = this.getDateKeyInTimeZone(now, timeZone);
+        const [y, m, d] = todayKey.split('-').map(Number);
+        const base = new Date(y, m - 1, d);
+        const stepped = new Date(base.getTime() - daysAgo * 24 * 60 * 60 * 1000);
+        return this.getDateKeyInTimeZone(stepped, timeZone);
     }
 };
 exports.MealService = MealService;

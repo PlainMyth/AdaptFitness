@@ -4,13 +4,23 @@
  * This strategy handles JWT token validation for Passport authentication. It extracts JWT tokens from the Authorization header, validates them, and returns user information if the token is valid.
  *
  * Key responsibilities:
-- Extract JWT tokens from HTTP requests\n * - Validate token signature and expiration\n * - Verify user exists and is active\n * - Return user data for authenticated requests
+ * - Extract JWT tokens from HTTP requests
+ * - Validate token signature and expiration
+ * - Verify user exists and is active
+ * - Return user data for authenticated requests
  */
 
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { UserService } from '../../user/user.service';
+
+interface JwtPayload {
+  sub: string;
+  email: string;
+  iat: number;
+  exp: number;
+}
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -22,7 +32,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: any) {
+  async validate(payload: JwtPayload) {
     console.log('🔐 JWT Strategy validate called with payload:', payload);
     try {
       const user = await this.userService.findById(payload.sub);
