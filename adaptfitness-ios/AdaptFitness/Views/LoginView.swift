@@ -14,6 +14,11 @@ struct LoginView: View {
     
     var body: some View {
         VStack(spacing: 20) {
+            Image("Logo") // name of your image set
+                .resizable()
+                .scaledToFit()
+                .frame(width: 120, height: 120)
+                .clipShape(Circle())
             Text("Welcome Back")
                 .font(.largeTitle)
                 .fontWeight(.bold)

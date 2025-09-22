@@ -25,7 +25,7 @@ struct AdaptFitnessApp: App {
 
     var body: some Scene {
         WindowGroup {
-            LoginView()
+            BrowseWorkoutsView()
         }
         .modelContainer(sharedModelContainer)
     }
