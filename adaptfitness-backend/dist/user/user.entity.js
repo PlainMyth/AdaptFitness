@@ -14,22 +14,6 @@ const typeorm_1 = require("typeorm");
 const workout_entity_1 = require("../workout/workout.entity");
 const meal_entity_1 = require("../meal/meal.entity");
 let User = class User {
-    id;
-    email;
-    password;
-    firstName;
-    lastName;
-    dateOfBirth;
-    height;
-    weight;
-    gender;
-    activityLevel;
-    activityLevelMultiplier;
-    isActive;
-    createdAt;
-    updatedAt;
-    workouts;
-    meals;
     get fullName() {
         return `${this.firstName} ${this.lastName}`;
     }

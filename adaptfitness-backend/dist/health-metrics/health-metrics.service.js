@@ -19,8 +19,6 @@ const typeorm_2 = require("typeorm");
 const health_metrics_entity_1 = require("./health-metrics.entity");
 const user_entity_1 = require("../user/user.entity");
 let HealthMetricsService = class HealthMetricsService {
-    healthMetricsRepository;
-    userRepository;
     constructor(healthMetricsRepository, userRepository) {
         this.healthMetricsRepository = healthMetricsRepository;
         this.userRepository = userRepository;
@@ -162,12 +160,13 @@ let HealthMetricsService = class HealthMetricsService {
         };
     }
     async getCalculatedMetrics(userId) {
+        var _a;
         const latest = await this.findLatest(userId);
         return {
             bmi: latest.bmi,
             tdee: latest.tdee,
             rmr: latest.rmr,
-            bodyFatCategory: this.getBodyFatCategory(latest.bodyFatPercentage, latest.user?.gender || 'male'),
+            bodyFatCategory: this.getBodyFatCategory(latest.bodyFatPercentage, ((_a = latest.user) === null || _a === void 0 ? void 0 : _a.gender) || 'male'),
             bmiCategory: this.getBMICategory(latest.bmi),
         };
     }

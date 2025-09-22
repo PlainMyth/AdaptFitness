@@ -13,22 +13,6 @@ exports.Workout = void 0;
 const typeorm_1 = require("typeorm");
 const user_entity_1 = require("../user/user.entity");
 let Workout = class Workout {
-    id;
-    name;
-    description;
-    startTime;
-    endTime;
-    totalCaloriesBurned;
-    totalDuration;
-    totalSets;
-    totalReps;
-    totalWeight;
-    workoutType;
-    isCompleted;
-    user;
-    userId;
-    createdAt;
-    updatedAt;
     get duration() {
         if (!this.startTime || !this.endTime)
             return 0;
