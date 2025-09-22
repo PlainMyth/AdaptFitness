@@ -7,7 +7,7 @@
 - Handle meal CRUD operations\n * - Validate meal data and permissions\n * - Provide meal logging endpoints\n * - Manage nutrition-related business logic
  */
 
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Request, Query } from '@nestjs/common';
 import { MealService } from './meal.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
@@ -27,6 +27,11 @@ export class MealController {
   @Get()
   async findAll(@Request() req) {
     return this.mealService.findAll(req.user.id);
+  }
+
+  @Get('streak/current')
+  async getCurrentStreak(@Request() req, @Query('tz') tz?: string) {
+    return this.mealService.getCurrentStreakInTimeZone(req.user.id, tz);
   }
 
   @Get(':id')
