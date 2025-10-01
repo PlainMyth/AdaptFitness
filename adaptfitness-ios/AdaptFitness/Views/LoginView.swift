@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct LoginView: View {
+    @Binding var isLoggedIn: Bool
     @State private var email: String = ""
     @State private var password: String = ""
     @State private var rememberMe: Bool = false
@@ -40,7 +41,10 @@ struct LoginView: View {
             
             // Login button
             Button(action: {
-                print("Logging in with \(email), password: \(password)")
+                // ✅ TODO: Validate credentials
+                if !email.isEmpty && !password.isEmpty {
+                    isLoggedIn = true
+                }
             }) {
                 Text("Login")
                     .frame(maxWidth: .infinity)
@@ -63,7 +67,7 @@ struct LoginView: View {
 
 struct LoginView_Previews: PreviewProvider {
     static var previews: some View {
-        LoginView()
+        LoginView(isLoggedIn: .constant(false))
             .previewDevice("iPhone 17") // Optional: choose simulator device
             .preferredColorScheme(.light)   // Optional: light/dark mode preview
     }
