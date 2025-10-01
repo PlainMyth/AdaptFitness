@@ -8,24 +8,45 @@
 import SwiftUI
 
 struct HomePageView: View {
+    @Binding var isLoggedIn: Bool
+    public var streak: Int = 1
+    
     var body: some View {
         VStack {
-            // Header
-            VStack {
-                Text("Welcome Back!")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                    .padding(.top, 20)
+            // Header with streak
+            HStack {
+                Spacer()
+                
+                // Streak badge
+                HStack(spacing: 4) {
+                    Image(systemName: "flame.fill") // fire icon
+                        .foregroundColor(.orange)
+                        .font(.system(size: 18, weight: .bold))
+                    
+                    Text("\(streak)") // hardcoded streak number
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.black)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 6)
+                .background(Color.white)
+                .cornerRadius(20)
+                .shadow(radius: 2)
             }
             
             Spacer().frame(height: 20)
             
             // Donut Graphs (placeholders)
+//            HStack(spacing: 20) {
+//                DonutStat(label: "Walking", value: "4.2 km left")
+//                DonutStat(label: "Jan Avg", value: "1199 cal")
+//                DonutStat(label: "Stretching", value: "16 left")
+//                DonutStat(label: "Workout Days", value: "3 left")
+//            }
+            
+            // Hor Calendar
             HStack(spacing: 20) {
-                DonutStat(label: "Walking", value: "4.2 km left")
-                DonutStat(label: "Jan Avg", value: "1199 cal")
-                DonutStat(label: "Stretching", value: "16 left")
-                DonutStat(label: "Workout Days", value: "3 left")
+                // where calendarview thing would go
             }
             .padding(.horizontal)
             
@@ -111,6 +132,6 @@ struct EntryRow: View {
 // Preview
 struct HomePageView_Previews: PreviewProvider {
     static var previews: some View {
-        HomePageView()
+        HomePageView(isLoggedIn: .constant(true))
     }
 }
