@@ -11,6 +11,8 @@ struct HomePageView: View {
     @Binding var isLoggedIn: Bool
     public var streak: Int = 1
     
+    private let weekDays = generateCurrentWeek()
+    
     var body: some View {
         VStack {
             // Header with streak
@@ -45,8 +47,9 @@ struct HomePageView: View {
 //            }
             
             // Hor Calendar
-            HStack(spacing: 20) {
+            HStack(spacing: 10) {
                 // where calendarview thing would go
+                HorizontalCalendar(days: weekDays)
             }
             .padding(.horizontal)
             
