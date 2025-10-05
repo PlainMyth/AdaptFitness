@@ -13,24 +13,6 @@ exports.Meal = void 0;
 const typeorm_1 = require("typeorm");
 const user_entity_1 = require("../user/user.entity");
 let Meal = class Meal {
-    id;
-    name;
-    description;
-    mealTime;
-    totalCalories;
-    totalProtein;
-    totalCarbs;
-    totalFat;
-    totalFiber;
-    totalSugar;
-    totalSodium;
-    mealType;
-    servingSize;
-    servingUnit;
-    user;
-    userId;
-    createdAt;
-    updatedAt;
     get proteinPercentage() {
         if (this.totalCalories === 0)
             return 0;
