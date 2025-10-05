@@ -9,9 +9,10 @@ import SwiftUI
 
 struct HomePageView: View {
     @Binding var isLoggedIn: Bool
+    @State private var days: [Day] = []
     public var streak: Int = 1
     
-    private let weekDays = generateCurrentWeek()
+    let calendar = Calendar.current
     
     var body: some View {
         VStack {
@@ -49,9 +50,17 @@ struct HomePageView: View {
             // Hor Calendar
             HStack(spacing: 10) {
                 // where calendarview thing would go
-                HorizontalCalendar(days: weekDays)
+                HorizontalCalendar(days: days)
+                    .onAppear {
+                        let calendar = Calendar.current
+                        let mockCompletedDates: [Date] = [
+                            calendar.date(byAdding: .day, value: -2, to: Date())!,
+                            calendar.date(byAdding: .day, value: 1, to: Date())!,
+                            Date()
+                        ]
+                        days = generateCurrentWeek(completedWorkouts:mockCompletedDates)
+                    }
             }
-            .padding(.horizontal)
             
             // Goals
             VStack {
