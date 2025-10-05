@@ -18,39 +18,128 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const workout_entity_1 = require("./workout.entity");
 let WorkoutService = class WorkoutService {
-    workoutRepository;
     constructor(workoutRepository) {
         this.workoutRepository = workoutRepository;
     }
-    async create(workoutData) {
-        const workout = this.workoutRepository.create(workoutData);
-        return this.workoutRepository.save(workout);
+    validateCreateWorkoutDto(dto) {
+        if (!dto.name || dto.name.trim().length === 0) {
+            throw new common_1.BadRequestException('Workout name is required.');
+        }
+        if (!dto.startTime) {
+            throw new common_1.BadRequestException('Workout start time is required.');
+        }
+        if (dto.totalCaloriesBurned !== undefined && dto.totalCaloriesBurned < 0) {
+            throw new common_1.BadRequestException('Total calories burned cannot be negative.');
+        }
+        if (dto.totalDuration !== undefined && dto.totalDuration < 0) {
+            throw new common_1.BadRequestException('Total duration cannot be negative.');
+        }
+        if (!dto.userId || dto.userId.trim().length === 0) {
+            throw new common_1.BadRequestException('User ID is required for workout creation.');
+        }
+    }
+    validateUpdateWorkoutDto(dto) {
+        if (dto.name !== undefined && dto.name.trim().length === 0) {
+            throw new common_1.BadRequestException('Workout name cannot be empty.');
+        }
+        if (dto.totalCaloriesBurned !== undefined && dto.totalCaloriesBurned < 0) {
+            throw new common_1.BadRequestException('Total calories burned cannot be negative.');
+        }
+        if (dto.totalDuration !== undefined && dto.totalDuration < 0) {
+            throw new common_1.BadRequestException('Total duration cannot be negative.');
+        }
+    }
+    async create(createWorkoutDto) {
+        this.validateCreateWorkoutDto(createWorkoutDto);
+        const workout = this.workoutRepository.create(createWorkoutDto);
+        return await this.workoutRepository.save(workout);
     }
     async findAll(userId) {
-        return this.workoutRepository.find({
-            where: { userId },
-            order: { startTime: 'DESC' }
+        return await this.workoutRepository.find({
+            where: { user: { id: userId } },
+            order: { startTime: 'DESC' },
         });
     }
-    async findOne(id, userId) {
+    async findOne(id) {
         const workout = await this.workoutRepository.findOne({
-            where: { id, userId }
+            where: { id },
+            relations: ['user'],
         });
         if (!workout) {
-            throw new common_1.NotFoundException('Workout not found');
+            throw new common_1.NotFoundException(`Workout with ID ${id} not found`);
         }
         return workout;
     }
-    async update(id, userId, updateData) {
-        const workout = await this.findOne(id, userId);
-        Object.assign(workout, updateData);
-        return this.workoutRepository.save(workout);
+    async update(id, updateWorkoutDto) {
+        this.validateUpdateWorkoutDto(updateWorkoutDto);
+        const workout = await this.findOne(id);
+        Object.assign(workout, updateWorkoutDto);
+        return await this.workoutRepository.save(workout);
     }
-    async remove(id, userId) {
-        const result = await this.workoutRepository.delete({ id, userId });
-        if (result.affected === 0) {
-            throw new common_1.NotFoundException('Workout not found');
+    async remove(id) {
+        const workout = await this.findOne(id);
+        await this.workoutRepository.remove(workout);
+    }
+    async getCurrentStreakInTimeZone(userId, timeZone) {
+        const workouts = await this.workoutRepository.find({
+            where: { user: { id: userId } },
+            order: { startTime: 'DESC' },
+        });
+        if (workouts.length === 0) {
+            return { streak: 0, lastWorkoutDate: null };
         }
+        const timeZoneToUse = timeZone || 'UTC';
+        const todayKey = this.getDateKeyInTimeZone(new Date(), timeZoneToUse);
+        let streak = 0;
+        let currentDateKey = todayKey;
+        const hasWorkoutToday = workouts.some(workout => workout.startTime && this.getDateKeyInTimeZone(workout.startTime, timeZoneToUse) === todayKey);
+        if (!hasWorkoutToday) {
+            currentDateKey = this.getKeyForDaysAgo(1, timeZoneToUse);
+        }
+        for (let daysAgo = 0; daysAgo < 365; daysAgo++) {
+            const dateKey = this.getKeyForDaysAgo(daysAgo, timeZoneToUse);
+            const hasWorkoutOnDate = workouts.some(workout => workout.startTime && this.getDateKeyInTimeZone(workout.startTime, timeZoneToUse) === dateKey);
+            if (hasWorkoutOnDate) {
+                streak++;
+            }
+            else {
+                break;
+            }
+        }
+        const lastWorkout = workouts.find(workout => workout.startTime);
+        const lastWorkoutDate = lastWorkout ?
+            this.getDateKeyInTimeZone(lastWorkout.startTime, timeZoneToUse) : null;
+        return { streak, lastWorkoutDate };
+    }
+    getDateKeyInTimeZone(date, timeZone) {
+        var _a, _b, _c, _d, _e, _f;
+        try {
+            const formatter = new Intl.DateTimeFormat('en-CA', {
+                timeZone: timeZone,
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+            });
+            const parts = formatter.formatToParts(date);
+            const year = (_b = (_a = parts.find(p => p.type === 'year')) === null || _a === void 0 ? void 0 : _a.value) !== null && _b !== void 0 ? _b : '2025';
+            const month = (_d = (_c = parts.find(p => p.type === 'month')) === null || _c === void 0 ? void 0 : _c.value) !== null && _d !== void 0 ? _d : '01';
+            const day = (_f = (_e = parts.find(p => p.type === 'day')) === null || _e === void 0 ? void 0 : _e.value) !== null && _f !== void 0 ? _f : '01';
+            return `${year}-${month}-${day}`;
+        }
+        catch (error) {
+            const year = date.getUTCFullYear();
+            const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(date.getUTCDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+    }
+    getKeyForDaysAgo(daysAgo, timeZone) {
+        const now = new Date();
+        const todayKey = this.getDateKeyInTimeZone(now, timeZone);
+        const [y, m, d] = todayKey.split('-').map(Number);
+        const base = new Date(y, m - 1, d);
+        const stepped = new Date(base.getTime() - daysAgo * 24 * 60 * 60 * 1000);
+        return this.getDateKeyInTimeZone(stepped, timeZone);
     }
 };
 exports.WorkoutService = WorkoutService;

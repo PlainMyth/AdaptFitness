@@ -6,7 +6,7 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
-    "target": "ES2022",
+    "target": "ES2018",
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": "./",
@@ -18,7 +18,10 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
     "resolveJsonModule": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "useDefineForClassFields": false,
+    "strict": false,
+    "lib": ["ES2018", "DOM"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "test"]

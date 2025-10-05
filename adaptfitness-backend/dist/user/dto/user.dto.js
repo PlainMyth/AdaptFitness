@@ -12,14 +12,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserResponseDto = exports.UpdateUserDto = exports.CreateUserDto = void 0;
 const class_validator_1 = require("class-validator");
 class CreateUserDto {
-    email;
-    password;
-    firstName;
-    lastName;
-    dateOfBirth;
-    height;
-    weight;
-    activityLevel;
 }
 exports.CreateUserDto = CreateUserDto;
 __decorate([
@@ -62,13 +54,6 @@ __decorate([
     __metadata("design:type", String)
 ], CreateUserDto.prototype, "activityLevel", void 0);
 class UpdateUserDto {
-    firstName;
-    lastName;
-    dateOfBirth;
-    height;
-    weight;
-    activityLevel;
-    isActive;
 }
 exports.UpdateUserDto = UpdateUserDto;
 __decorate([
@@ -109,19 +94,6 @@ __decorate([
     __metadata("design:type", Boolean)
 ], UpdateUserDto.prototype, "isActive", void 0);
 class UserResponseDto {
-    id;
-    email;
-    firstName;
-    lastName;
-    fullName;
-    dateOfBirth;
-    height;
-    weight;
-    bmi;
-    activityLevel;
-    isActive;
-    createdAt;
-    updatedAt;
 }
 exports.UserResponseDto = UserResponseDto;
 //# sourceMappingURL=user.dto.js.map

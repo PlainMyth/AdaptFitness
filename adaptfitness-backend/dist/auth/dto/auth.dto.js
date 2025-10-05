@@ -12,10 +12,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.RegisterResponseDto = exports.AuthResponseDto = exports.LoginDto = exports.RegisterDto = void 0;
 const class_validator_1 = require("class-validator");
 class RegisterDto {
-    email;
-    password;
-    firstName;
-    lastName;
 }
 exports.RegisterDto = RegisterDto;
 __decorate([
@@ -36,8 +32,6 @@ __decorate([
     __metadata("design:type", String)
 ], RegisterDto.prototype, "lastName", void 0);
 class LoginDto {
-    email;
-    password;
 }
 exports.LoginDto = LoginDto;
 __decorate([
@@ -49,13 +43,9 @@ __decorate([
     __metadata("design:type", String)
 ], LoginDto.prototype, "password", void 0);
 class AuthResponseDto {
-    access_token;
-    user;
 }
 exports.AuthResponseDto = AuthResponseDto;
 class RegisterResponseDto {
-    message;
-    user;
 }
 exports.RegisterResponseDto = RegisterResponseDto;
 //# sourceMappingURL=auth.dto.js.map
