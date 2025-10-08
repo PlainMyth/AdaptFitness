@@ -39,7 +39,7 @@ struct GoalTileView: View {
             }
             .frame(width: 80, height: 80)
             
-            VStack {
+            VStack(spacing: 10) {
                 Text(title)
                     .font(.subheadline)
                     .foregroundColor(.secondary)

@@ -11,6 +11,7 @@ struct HomePageView: View {
     @Binding var isLoggedIn: Bool
     let calendar = Calendar.current
     @State private var days: [Day] = []
+    @State private var showingAddGoalForm = false
     
 //    hardcoded data used to mimic returned request
     public var streak: Int = 1
@@ -87,10 +88,34 @@ struct HomePageView: View {
                             icon: goal.icon
                         )
                     }
+                    Button(action: {
+                            showingAddGoalForm = true
+                    }) {
+                            VStack(spacing: 10) {
+                                ZStack {
+                                    Circle()
+                                        .stroke(Color.gray.opacity(0.2), lineWidth: 10)
+                                        .frame(width: 100, height: 100)
+
+                                    Image(systemName: "plus")
+                                        .font(.system(size: 24, weight: .bold))
+                                        .foregroundColor(.gray)
+                                }
+                                Text("Add Goal")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                            }
+                            .frame(width: 120)
+                        }
+                        .buttonStyle(PlainButtonStyle()) // removes default button styling
+                        .sheet(isPresented: $showingAddGoalForm) {
+                            AddGoalForm(goals: $goals)
+                        }
+                    }
                 }
                 .padding(.horizontal)
-            }
-//            spacing color
+            
+//           spacing color
             .background(Color(.systemGroupedBackground).ignoresSafeArea())
             
 //            intended color
@@ -104,22 +129,8 @@ struct HomePageView: View {
                     }
                 }
             }
+            
     
-            // Goals
-//            VStack {
-//                Text("Your goals")
-//                    .font(.title2)
-//                    .padding(.top, 30)
-//                
-//                Button(action: {
-//                    print("Add new goal tapped")
-//                }) {
-//                    Text("Add new")
-//                        .frame(maxWidth: .infinity)
-//                }
-//                .buttonStyle(.bordered)
-//                .padding(.horizontal)
-//            }
             
             // Entries
             ScrollView {
