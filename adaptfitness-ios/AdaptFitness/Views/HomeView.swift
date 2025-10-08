@@ -9,10 +9,21 @@ import SwiftUI
 
 struct HomePageView: View {
     @Binding var isLoggedIn: Bool
+    let calendar = Calendar.current
     @State private var days: [Day] = []
+    
+//    hardcoded data used to mimic returned request
     public var streak: Int = 1
     
-    let calendar = Calendar.current
+    // goals
+    @State private var goals: [(title: String, progress: Double, color: Color, icon: String)] = [
+            ("Workout Streak", 0.75, .green, "flame.fill"),
+            ("Calories", 0.60, .orange, "bolt.heart"),
+            ("Steps", 0.90, .blue, "figure.walk"),
+            ("Sleep", 0.45, .purple, "bed.double.fill")
+        ]
+    
+    
     
     var body: some View {
         VStack {
@@ -62,21 +73,53 @@ struct HomePageView: View {
                     }
             }
             
-            // Goals
-            VStack {
-                Text("Your goals")
-                    .font(.title2)
-                    .padding(.top, 30)
-                
-                Button(action: {
-                    print("Add new goal tapped")
-                }) {
-                    Text("Add new")
-                        .frame(maxWidth: .infinity)
+            Text("Goals")
+                .font(.title)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 40) {
+                    ForEach(Array(goals.enumerated()), id: \.offset) { index, goal in
+                        GoalTileView(
+                            progress: goal.progress,
+                            color: goal.color,
+                            title: goal.title,
+                            icon: goal.icon
+                        )
+                    }
                 }
-                .buttonStyle(.bordered)
                 .padding(.horizontal)
             }
+//            spacing color
+            .background(Color(.systemGroupedBackground).ignoresSafeArea())
+            
+//            intended color
+//            .background(Color(.systemBackground).ignoresSafeArea())
+            .onAppear {
+                // Example: Simulate progress updates after data fetch
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                    withAnimation {
+                        goals[0].progress = 0.9
+                        goals[1].progress = 0.7
+                    }
+                }
+            }
+    
+            // Goals
+//            VStack {
+//                Text("Your goals")
+//                    .font(.title2)
+//                    .padding(.top, 30)
+//                
+//                Button(action: {
+//                    print("Add new goal tapped")
+//                }) {
+//                    Text("Add new")
+//                        .frame(maxWidth: .infinity)
+//                }
+//                .buttonStyle(.bordered)
+//                .padding(.horizontal)
+//            }
             
             // Entries
             ScrollView {
