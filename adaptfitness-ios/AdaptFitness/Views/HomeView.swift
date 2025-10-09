@@ -8,42 +8,129 @@
 import SwiftUI
 
 struct HomePageView: View {
+    @Binding var isLoggedIn: Bool
+    let calendar = Calendar.current
+    @State private var days: [Day] = []
+    @State private var showingAddGoalForm = false
+    
+//    hardcoded data used to mimic returned request
+    public var streak: Int = 1
+    
+    // goals
+    @State private var goals: [(title: String, progress: Double, color: Color, icon: String)] = [
+            ("Workout Streak", 0.75, .green, "flame.fill"),
+            ("Calories", 0.60, .orange, "bolt.heart"),
+            ("Steps", 0.90, .blue, "figure.walk"),
+            ("Sleep", 0.45, .purple, "bed.double.fill")
+        ]
+    
+    
+    
     var body: some View {
         VStack {
-            // Header
-            VStack {
-                Text("Welcome Back!")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                    .padding(.top, 20)
+            // Header with streak
+            HStack {
+                Spacer()
+                
+                // Streak badge
+                HStack(spacing: 4) {
+                    Image(systemName: "flame.fill") // fire icon
+                        .foregroundColor(.orange)
+                        .font(.system(size: 18, weight: .bold))
+                    
+                    Text("\(streak)") // hardcoded streak number
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.black)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 6)
+                .background(Color.white)
+                .cornerRadius(20)
+                .shadow(radius: 2)
             }
             
             Spacer().frame(height: 20)
             
             // Donut Graphs (placeholders)
-            HStack(spacing: 20) {
-                DonutStat(label: "Walking", value: "4.2 km left")
-                DonutStat(label: "Jan Avg", value: "1199 cal")
-                DonutStat(label: "Stretching", value: "16 left")
-                DonutStat(label: "Workout Days", value: "3 left")
-            }
-            .padding(.horizontal)
+//            HStack(spacing: 20) {
+//                DonutStat(label: "Walking", value: "4.2 km left")
+//                DonutStat(label: "Jan Avg", value: "1199 cal")
+//                DonutStat(label: "Stretching", value: "16 left")
+//                DonutStat(label: "Workout Days", value: "3 left")
+//            }
             
-            // Goals
-            VStack {
-                Text("Your goals")
-                    .font(.title2)
-                    .padding(.top, 30)
-                
-                Button(action: {
-                    print("Add new goal tapped")
-                }) {
-                    Text("Add new")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
-                .padding(.horizontal)
+            // Hor Calendar
+            HStack(spacing: 10) {
+                // where calendarview thing would go
+                HorizontalCalendar(days: days)
+                    .onAppear {
+                        let calendar = Calendar.current
+                        let mockCompletedDates: [Date] = [
+                            calendar.date(byAdding: .day, value: -2, to: Date())!,
+                            calendar.date(byAdding: .day, value: 1, to: Date())!,
+                            Date()
+                        ]
+                        days = generateCurrentWeek(completedWorkouts:mockCompletedDates)
+                    }
             }
+            
+            Text("Goals")
+                .font(.title)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 40) {
+                    ForEach(Array(goals.enumerated()), id: \.offset) { index, goal in
+                        GoalTileView(
+                            progress: goal.progress,
+                            color: goal.color,
+                            title: goal.title,
+                            icon: goal.icon
+                        )
+                    }
+                    Button(action: {
+                            showingAddGoalForm = true
+                    }) {
+                            VStack(spacing: 10) {
+                                ZStack {
+                                    Circle()
+                                        .stroke(Color.gray.opacity(0.2), lineWidth: 10)
+                                        .frame(width: 100, height: 100)
+
+                                    Image(systemName: "plus")
+                                        .font(.system(size: 24, weight: .bold))
+                                        .foregroundColor(.gray)
+                                }
+                                Text("Add Goal")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                            }
+                            .frame(width: 120)
+                        }
+                        .buttonStyle(PlainButtonStyle()) // removes default button styling
+                        .sheet(isPresented: $showingAddGoalForm) {
+                            AddGoalForm(goals: $goals)
+                        }
+                    }
+                }
+                .padding(.horizontal)
+            
+//           spacing color
+            .background(Color(.systemGroupedBackground).ignoresSafeArea())
+            
+//            intended color
+//            .background(Color(.systemBackground).ignoresSafeArea())
+            .onAppear {
+                // Example: Simulate progress updates after data fetch
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                    withAnimation {
+                        goals[0].progress = 0.9
+                        goals[1].progress = 0.7
+                    }
+                }
+            }
+            
+    
             
             // Entries
             ScrollView {
@@ -111,6 +198,6 @@ struct EntryRow: View {
 // Preview
 struct HomePageView_Previews: PreviewProvider {
     static var previews: some View {
-        HomePageView()
+        HomePageView(isLoggedIn: .constant(true))
     }
 }
