@@ -7,3 +7,10 @@ build/
 *.xcuserstate
 *.moved-aside
 *.swp
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.staging
+*.env
