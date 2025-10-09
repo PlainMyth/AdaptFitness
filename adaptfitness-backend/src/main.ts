@@ -16,6 +16,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { validateEnvironment } from './config/env.validation';
 
 /**
  * Bootstrap Function
@@ -31,6 +32,9 @@ import { AppModule } from './app.module';
  * 5. Displays startup information
  */
 async function bootstrap() {
+  // Validate environment variables before starting the application
+  validateEnvironment();
+  
   // Create the NestJS application instance using our main AppModule
   const app = await NestFactory.create(AppModule);
   
