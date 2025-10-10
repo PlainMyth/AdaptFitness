@@ -12,6 +12,7 @@ struct HomePageView: View {
     let calendar = Calendar.current
     @State private var days: [Day] = []
     @State private var showingAddGoalForm = false
+    @State private var showingAddWorkoutForm = false
     
 //    hardcoded data used to mimic returned request
     public var streak: Int = 1
@@ -74,6 +75,7 @@ struct HomePageView: View {
                     }
             }
             
+//          GOAL BAR =================================
             Text("Goals")
                 .font(.title)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -88,32 +90,34 @@ struct HomePageView: View {
                             icon: goal.icon
                         )
                     }
-                    Button(action: {
-                            showingAddGoalForm = true
-                    }) {
-                            VStack(spacing: 10) {
-                                ZStack {
-                                    Circle()
-                                        .stroke(Color.gray.opacity(0.2), lineWidth: 10)
-                                        .frame(width: 100, height: 100)
-
-                                    Image(systemName: "plus")
-                                        .font(.system(size: 24, weight: .bold))
-                                        .foregroundColor(.gray)
-                                }
-                                Text("Add Goal")
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                            }
-                            .frame(width: 120)
-                        }
-                        .buttonStyle(PlainButtonStyle()) // removes default button styling
-                        .sheet(isPresented: $showingAddGoalForm) {
-                            AddGoalForm(goals: $goals)
-                        }
+//                  GOAL FORM =================================
+//                    Button(action: {
+//                            showingAddGoalForm = true
+//                    }) {
+//                            VStack(spacing: 10) {
+//                                ZStack {
+//                                    Circle()
+//                                        .stroke(Color.gray.opacity(0.2), lineWidth: 10)
+//                                        .frame(width: 80, height: 80)
+//
+//                                    Image(systemName: "plus")
+//                                        .font(.system(size: 24, weight: .bold))
+//                                        .foregroundColor(.gray)
+//                                }
+//                                Text("Add Goal")
+//                                    .font(.subheadline)
+//                                    .foregroundColor(.secondary)
+//                            }
+//                            .frame(width: 120)
+//                        }
+//                        .buttonStyle(PlainButtonStyle()) // removes default button styling
+//                        .sheet(isPresented: $showingAddGoalForm) {
+//                            AddGoalForm(goals: $goals)
+//                        }
                     }
                 }
-                .padding(.horizontal)
+//                .padding(.horizontal)
+                .contentMargins(.horizontal, 20)
             
 //           spacing color
             .background(Color(.systemGroupedBackground).ignoresSafeArea())
@@ -139,6 +143,38 @@ struct HomePageView: View {
                     EntryRow(date: "01/02", images: ["chicken", "chicken2", "chicken3"])
                 }
                 .padding(.top, 20)
+            }
+            
+            // Add workout button
+            ZStack {
+                // 1️⃣ Your main content
+                ScrollView {
+                    VStack(spacing: 20) {
+                        // your other content here (calendar, goals, etc.)
+                    }
+                    .padding(80) // make room so content isn’t hidden by the button
+                }
+
+                // 2️⃣ Floating button
+                VStack {
+                    Spacer() // push it to the bottom
+                    HStack {
+                        Spacer() // push it to bottom-right
+                        Button(action: {
+                            // Action when tapped
+                            showingAddWorkoutForm = true
+                        }) {
+                            Image(systemName: "plus")
+                                .font(.system(size: 24, weight: .bold))
+                                .foregroundColor(.white)
+                                .padding()
+                                .background(Color.blue)
+                                .clipShape(Circle())
+                                .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 3)
+                        }
+                        .padding()
+                    }
+                }
             }
             
             // Footer Tabs
