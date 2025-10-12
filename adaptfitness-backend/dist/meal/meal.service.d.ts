@@ -8,4 +8,15 @@ export declare class MealService {
     findOne(id: string, userId: string): Promise<Meal>;
     update(id: string, userId: string, updateData: Partial<Meal>): Promise<Meal>;
     remove(id: string, userId: string): Promise<void>;
+    getCurrentStreak(userId: string): Promise<{
+        streak: number;
+        lastMealDate?: string;
+    }>;
+    getCurrentStreakInTimeZone(userId: string, timeZone?: string): Promise<{
+        streak: number;
+        lastMealDate?: string;
+    }>;
+    private validateTimeZone;
+    private getDateKeyInTimeZone;
+    private getKeyForDaysAgo;
 }

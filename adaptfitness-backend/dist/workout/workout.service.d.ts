@@ -8,4 +8,15 @@ export declare class WorkoutService {
     findOne(id: string, userId: string): Promise<Workout>;
     update(id: string, userId: string, updateData: Partial<Workout>): Promise<Workout>;
     remove(id: string, userId: string): Promise<void>;
+    getCurrentStreak(userId: string): Promise<{
+        streak: number;
+        lastWorkoutDate?: string;
+    }>;
+    getCurrentStreakInTimeZone(userId: string, timeZone?: string): Promise<{
+        streak: number;
+        lastWorkoutDate?: string;
+    }>;
+    private validateTimeZone;
+    private getDateKeyInTimeZone;
+    private getKeyForDaysAgo;
 }

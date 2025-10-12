@@ -157,8 +157,8 @@ export class WorkoutService {
     const now = new Date();
     const todayKey = this.getDateKeyInTimeZone(now, timeZone);
     const [y, m, d] = todayKey.split('-').map(Number);
-    // Create a UTC date at local midnight, then step back daysAgo
-    const base = new Date(Date.UTC(y, m - 1, d));
+    // Create a date at local midnight, then step back daysAgo
+    const base = new Date(y, m - 1, d);
     const stepped = new Date(base.getTime() - daysAgo * 24 * 60 * 60 * 1000);
     return this.getDateKeyInTimeZone(stepped, timeZone);
   }

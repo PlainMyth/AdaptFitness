@@ -23,5 +23,6 @@ import { AuthModule } from '../auth/auth.module';
   ],
   providers: [WorkoutService],
   controllers: [WorkoutController],
+  exports: [WorkoutService],
 })
 export class WorkoutModule {}

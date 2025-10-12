@@ -23,6 +23,7 @@ import { UserModule } from './user/user.module';
 import { WorkoutModule } from './workout/workout.module';
 import { MealModule } from './meal/meal.module';
 import { HealthMetricsModule } from './health-metrics/health-metrics.module';
+import { GoalCalendarModule } from './goal-calendar/goal-calendar.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { JwtStrategy } from './auth/strategies/jwt.strategy';
@@ -67,6 +68,7 @@ import { JwtStrategy } from './auth/strategies/jwt.strategy';
     WorkoutModule,           // Workout tracking and management
     MealModule,              // Meal logging and nutrition tracking
     HealthMetricsModule,     // Health metrics and body composition
+    GoalCalendarModule,      // Goal calendar and weekly fitness goals
   ],
   
   // Root-level controllers

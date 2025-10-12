@@ -30,6 +30,9 @@ let WorkoutController = class WorkoutController {
     async findAll(req) {
         return this.workoutService.findAll(req.user.id);
     }
+    async getCurrentStreak(req, tz) {
+        return this.workoutService.getCurrentStreakInTimeZone(req.user.id, tz);
+    }
     async findOne(req, id) {
         return this.workoutService.findOne(id, req.user.id);
     }
@@ -57,6 +60,14 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], WorkoutController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)('streak/current'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Query)('tz')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], WorkoutController.prototype, "getCurrentStreak", null);
 __decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Request)()),

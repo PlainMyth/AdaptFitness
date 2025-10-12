@@ -26,6 +26,7 @@ exports.WorkoutModule = WorkoutModule = __decorate([
         ],
         providers: [workout_service_1.WorkoutService],
         controllers: [workout_controller_1.WorkoutController],
+        exports: [workout_service_1.WorkoutService],
     })
 ], WorkoutModule);
 //# sourceMappingURL=workout.module.js.map

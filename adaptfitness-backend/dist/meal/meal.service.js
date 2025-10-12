@@ -52,6 +52,87 @@ let MealService = class MealService {
             throw new common_1.NotFoundException('Meal not found');
         }
     }
+    async getCurrentStreak(userId) {
+        return this.getCurrentStreakInTimeZone(userId);
+    }
+    async getCurrentStreakInTimeZone(userId, timeZone) {
+        const tz = this.validateTimeZone(timeZone);
+        const meals = await this.mealRepository.find({
+            where: { userId },
+            select: ['mealTime'],
+            order: { mealTime: 'DESC' },
+        });
+        if (!meals.length) {
+            return { streak: 0 };
+        }
+        const dateSet = new Set();
+        for (const m of meals) {
+            if (!m.mealTime)
+                continue;
+            dateSet.add(this.getDateKeyInTimeZone(m.mealTime, tz));
+        }
+        if (dateSet.size === 0) {
+            return { streak: 0 };
+        }
+        const todayKey = this.getKeyForDaysAgo(0, tz);
+        const yKey = this.getKeyForDaysAgo(1, tz);
+        let daysAgo = 0;
+        let streak = 0;
+        if (dateSet.has(todayKey)) {
+            streak = 1;
+        }
+        else if (dateSet.has(yKey)) {
+            daysAgo = 1;
+            streak = 1;
+        }
+        else {
+            return { streak: 0 };
+        }
+        while (true) {
+            const nextKey = this.getKeyForDaysAgo(daysAgo + 1, tz);
+            if (dateSet.has(nextKey)) {
+                streak += 1;
+                daysAgo += 1;
+            }
+            else {
+                break;
+            }
+        }
+        const lastMealDate = [...dateSet].sort().pop();
+        return { streak, lastMealDate };
+    }
+    validateTimeZone(tz) {
+        if (!tz)
+            return 'UTC';
+        try {
+            new Intl.DateTimeFormat('en-US', { timeZone: tz }).format(new Date());
+            return tz;
+        }
+        catch {
+            return 'UTC';
+        }
+    }
+    getDateKeyInTimeZone(date, timeZone) {
+        const fmt = new Intl.DateTimeFormat('en-CA', {
+            timeZone,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+        });
+        const parts = fmt.formatToParts(date);
+        const year = parts.find(p => p.type === 'year')?.value ?? '0000';
+        const month = parts.find(p => p.type === 'month')?.value ?? '01';
+        const day = parts.find(p => p.type === 'day')?.value ?? '01';
+        return `${year}-${month}-${day}`;
+    }
+    getKeyForDaysAgo(daysAgo, timeZone) {
+        const now = new Date();
+        const todayKey = this.getDateKeyInTimeZone(now, timeZone);
+        const [y, m, d] = todayKey.split('-').map(Number);
+        const base = new Date(y, m - 1, d);
+        const stepped = new Date(base.getTime() - daysAgo * 24 * 60 * 60 * 1000);
+        return this.getDateKeyInTimeZone(stepped, timeZone);
+    }
 };
 exports.MealService = MealService;
 exports.MealService = MealService = __decorate([

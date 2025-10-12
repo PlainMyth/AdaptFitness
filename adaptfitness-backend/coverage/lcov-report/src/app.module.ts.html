@@ -32,7 +32,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/16</span>
+                <span class='fraction'>0/14</span>
             </div>
         
             
@@ -144,8 +144,7 @@
 <a name='L79'></a><a href='#L79'>79</a>
 <a name='L80'></a><a href='#L80'>80</a>
 <a name='L81'></a><a href='#L81'>81</a>
-<a name='L82'></a><a href='#L82'>82</a>
-<a name='L83'></a><a href='#L83'>83</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L82'></a><a href='#L82'>82</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -173,7 +172,6 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -229,11 +227,11 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * Main Application Module
- * 
+ *
  * This is the root module of the AdaptFitness API application.
  * It imports and configures all other modules, sets up the database connection,
  * and configures authentication and other global services.
- * 
+ *
  * Key responsibilities:
  * - Import and configure all feature modules
  * - Set up database connection (PostgreSQL)
@@ -256,57 +254,56 @@
 <span class="cstat-no" title="statement not covered" >import { AppService } from './app.service';</span>
 <span class="cstat-no" title="statement not covered" >import { JwtStrategy } from './auth/strategies/jwt.strategy';</span>
 &nbsp;
-// @Module decorator defines this as the root module
 @Module({
   imports: [
-    // Configuration Module - Manages environment variables
-    // This makes environment variables available throughout the app
+    // Global configuration module for environment variables
     ConfigModule.forRoot({
-      isGlobal: true,        // Available in all modules without importing
-      envFilePath: '.env',   // Load variables from .env file
+      isGlobal: true,        // Make environment variables available globally
+      envFilePath: '.env',   // Path to environment file
     }),
     
-    // Database Module - PostgreSQL connection using TypeORM
-    // This connects our app to the PostgreSQL database
+    // Database configuration using TypeORM with PostgreSQL
     TypeOrmModule.forRoot({
       type: 'postgres',      // Database type
-      host: process.env.DATABASE_HOST || 'localhost',           // Database server
-      port: parseInt(process.env.DATABASE_PORT || '5432') || 5432, // Database port
-      username: process.env.DATABASE_USERNAME || 'postgres',    // Database username
-      password: process.env.DATABASE_PASSWORD || 'password',    // Database password
-      database: process.env.DATABASE_NAME || 'adaptfitness',    // Database name
-      entities: [__dirname + '/**/*.entity{.ts,.js}'],          // Auto-discover entity files
-      synchronize: process.env.NODE_ENV !== 'production',       // Auto-sync schema in dev
-      logging: process.env.NODE_ENV === 'development',          // Log SQL queries in dev
+      host: process.env.DATABASE_HOST || 'localhost',                    // Database host
+      port: parseInt(process.env.DATABASE_PORT) || 5432,                 // Database port
+      username: process.env.DATABASE_USERNAME || 'postgres',             // Database username
+      password: process.env.DATABASE_PASSWORD || 'password',             // Database password
+      database: process.env.DATABASE_NAME || 'adaptfitness',             // Database name
+      entities: [__dirname + '/**/*.entity{.ts,.js}'],                   // Auto-load all entity files
+      synchronize: process.env.NODE_ENV !== 'production',                // Auto-sync schema in development
+      logging: process.env.NODE_ENV === 'development',                   // Enable SQL logging in development
     }),
     
-    // Passport Module - Authentication framework
-    // This handles user authentication strategies
-    PassportModule.register({ defaultStrategy: 'jwt' }),
+    // Passport authentication module
+    PassportModule.register({ 
+      defaultStrategy: 'jwt'  // Use JWT as the default authentication strategy
+    }),
     
-    // JWT Module - JSON Web Token configuration
-    // This handles token creation and validation
+    // JWT token configuration
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production-adaptfitness-2024',
-      signOptions: { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }, // Token expires in 24 hours
+      signOptions: { 
+        expiresIn: process.env.JWT_EXPIRES_IN || '24h'  // Token expiration time
+      },
     }),
     
-    // Feature Modules - Import all our application modules
-    AuthModule,           // User authentication (login, register, JWT)
-    UserModule,           // User management (profiles, user data)
-    WorkoutModule,        // Workout tracking (exercises, routines)
-    MealModule,           // Meal logging (food tracking, nutrition)
-    HealthMetricsModule,  // Health calculations (BMI, TDEE, body composition)
+    // Feature modules
+    AuthModule,              // Authentication and user management
+    UserModule,              // User profile and account management
+    WorkoutModule,           // Workout tracking and management
+    MealModule,              // Meal logging and nutrition tracking
+    HealthMetricsModule,     // Health metrics and body composition
   ],
   
-  // Controllers - Handle HTTP requests
+  // Root-level controllers
   controllers: [AppController],
   
-  // Providers - Services and utilities available throughout the app
+  // Root-level services and strategies
   providers: [AppService, JwtStrategy],
   
-  // Exports - Services that other modules can use
-  exports: [JwtStrategy], // JWT strategy available to other modules
+  // Export JWT strategy for use in other modules
+  exports: [JwtStrategy],
 })
 export <span class="cstat-no" title="statement not covered" >class <span class="cstat-no" title="statement not covered" ><span class="cstat-no" title="statement not covered" >AppModule </span>{}</span></span>
 &nbsp;</pre></td></tr></table></pre>
@@ -316,7 +313,7 @@ export <span class="cstat-no" title="statement not covered" >class <span class="
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-09-18T05:45:35.860Z
+                at 2025-09-22T04:37:07.000Z
             </div>
         <script src="../prettify.js"></script>
         <script>

@@ -17,6 +17,7 @@ const user_module_1 = require("./user/user.module");
 const workout_module_1 = require("./workout/workout.module");
 const meal_module_1 = require("./meal/meal.module");
 const health_metrics_module_1 = require("./health-metrics/health-metrics.module");
+const goal_calendar_module_1 = require("./goal-calendar/goal-calendar.module");
 const app_controller_1 = require("./app.controller");
 const app_service_1 = require("./app.service");
 const jwt_strategy_1 = require("./auth/strategies/jwt.strategy");
@@ -55,6 +56,7 @@ exports.AppModule = AppModule = __decorate([
             workout_module_1.WorkoutModule,
             meal_module_1.MealModule,
             health_metrics_module_1.HealthMetricsModule,
+            goal_calendar_module_1.GoalCalendarModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService, jwt_strategy_1.JwtStrategy],
