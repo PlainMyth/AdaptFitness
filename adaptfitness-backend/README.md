@@ -42,10 +42,30 @@ The API will be available at `http://localhost:3000`
 - `GET /` - Welcome message and API info
 
 ### Authentication
-- `POST /auth/register` - Register a new user
-- `POST /auth/login` - Login user
+
+**Rate Limiting**: Auth endpoints are rate-limited to prevent brute force attacks
+- **Registration & Login**: 5 requests per 15 minutes per IP
+- **Other endpoints**: 10 requests per minute per IP
+
+- `POST /auth/register` - Register a new user (Rate Limited: 5/15min)
+- `POST /auth/login` - Login user (Rate Limited: 5/15min)
 - `GET /auth/profile` - Get user profile (protected)
 - `GET /auth/validate` - Validate JWT token (protected)
+
+#### Password Requirements
+All passwords must meet the following security requirements:
+- **Minimum length**: 8 characters
+- **Uppercase letter**: At least one (A-Z)
+- **Lowercase letter**: At least one (a-z)
+- **Number**: At least one (0-9)
+- **Special character**: At least one (!@#$%^&*()_+-=[]{};"\\|,.<>/?)
+
+**Example valid passwords:**
+- `SecurePass123!`
+- `MyP@ssw0rd`
+- `Fitness2024#`
+
+**Registration will reject weak passwords with detailed error messages.**
 
 ### Users
 - `GET /users/profile` - Get current user profile (protected)
@@ -61,6 +81,60 @@ The API will be available at `http://localhost:3000`
 - `GET /workouts/:id` - Get workout by ID (protected)
 - `PUT /workouts/:id` - Update workout (protected)
 - `DELETE /workouts/:id` - Delete workout (protected)
+
+#### Workout Creation
+Required fields:
+- `name` (string) - Workout name (cannot be empty)
+- `description` (string) - Workout description
+- `startTime` (ISO date) - When workout started
+- `userId` (string) - User ID (auto-set from JWT)
+
+Optional fields:
+- `endTime` (ISO date) - When workout ended
+- `totalCaloriesBurned` (number) - Calories burned (must be >= 0)
+- `totalDuration` (number) - Duration in minutes (must be >= 0)
+- `totalSets` (number) - Number of sets
+- `totalReps` (number) - Total repetitions
+- `totalWeight` (number) - Total weight lifted (kg)
+- `workoutType` (enum) - `cardio`, `strength`, `flexibility`, `sports`, or `other`
+- `isCompleted` (boolean) - Completion status
+
+**Example Request:**
+```json
+{
+  "name": "Morning Run",
+  "description": "5K morning jog",
+  "startTime": "2024-10-09T08:00:00Z",
+  "endTime": "2024-10-09T08:30:00Z",
+  "totalCaloriesBurned": 300,
+  "totalDuration": 30,
+  "workoutType": "cardio",
+  "isCompleted": true
+}
+```
+
+#### Streak Calculation
+- **Timezone Support**: Pass `?tz=America/New_York` to get timezone-aware streaks
+- **Default**: Uses UTC if no timezone specified
+- **Streak Rules**:
+  - Consecutive days with at least one workout
+  - Multiple workouts on same day count as 1 day
+  - Streak extends to yesterday (grace period)
+  - Maximum streak calculation: 365 days
+- **Response Format**: `{ streak: number, lastWorkoutDate: "YYYY-MM-DD" }`
+
+**Example Streak Request:**
+```bash
+GET /workouts/streak/current?tz=America/Los_Angeles
+```
+
+**Example Streak Response:**
+```json
+{
+  "streak": 7,
+  "lastWorkoutDate": "2024-10-09"
+}
+```
 
 ### Meals
 - `POST /meals` - Create meal (protected)
@@ -87,6 +161,33 @@ The API will be available at `http://localhost:3000`
 - **Validation**: Manual service-level validation
 - **Testing**: Jest with comprehensive test coverage
 - **Health Metrics**: Advanced body composition calculations
+
+## 🔒 Security Features
+
+### Password Security
+- **Strong password requirements** enforced at registration
+- **bcrypt hashing** with salt rounds for password storage
+- **Separate auth methods** prevent password leakage in queries
+- **Password validation** rejects weak passwords with detailed feedback
+
+### Authentication
+- **JWT tokens** for stateless authentication
+- **Environment validation** ensures required secrets are configured
+- **No hardcoded secrets** - all secrets from environment variables
+- **Token expiration** configurable via environment
+
+### Rate Limiting
+- **Global rate limiting**: 10 requests/minute per IP on all endpoints
+- **Auth endpoint protection**: 5 requests/15 minutes per IP on login/register
+- **Brute force prevention**: Blocks excessive login attempts
+- **Account spam prevention**: Limits registration attempts
+- **429 responses**: Clear "Too Many Requests" errors when limit exceeded
+
+### Data Protection
+- **User ownership validation** on all protected endpoints
+- **Password exclusion** from general database queries
+- **Input validation** on all endpoints
+- **CORS configuration** for secure cross-origin requests
 
 ## 🧪 Testing
 

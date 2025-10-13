@@ -13,9 +13,11 @@
  */
 
 import { Controller, Post, Body, ValidationPipe, Get, UseGuards, Request } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { RegisterDto, LoginDto, AuthResponseDto, RegisterResponseDto } from './dto/auth.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { authThrottlerConfig } from '../config/throttler.config';
 
 // @Controller decorator with 'auth' prefix means all routes start with /auth
 @Controller('auth')
@@ -49,6 +51,7 @@ export class AuthController {
    * }
    */
   @Post('register')
+  @Throttle({ default: { limit: authThrottlerConfig.limit, ttl: authThrottlerConfig.ttl } })
   async register(@Body(ValidationPipe) registerDto: RegisterDto): Promise<RegisterResponseDto> {
     return this.authService.register(registerDto);
   }
@@ -85,6 +88,7 @@ export class AuthController {
    * }
    */
   @Post('login')
+  @Throttle({ default: { limit: authThrottlerConfig.limit, ttl: authThrottlerConfig.ttl } })
   async login(@Body(ValidationPipe) loginDto: LoginDto): Promise<AuthResponseDto> {
     return this.authService.login(loginDto);
   }
