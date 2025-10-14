@@ -13,6 +13,8 @@ struct HomePageView: View {
     @State private var days: [Day] = []
     @State private var showingAddGoalForm = false
     @State private var showingAddWorkoutForm = false
+    @State private var showCamera = false
+    @State private var capturedImage: UIImage?
     
 //    hardcoded data used to mimic returned request
     let user: User
@@ -147,7 +149,7 @@ struct HomePageView: View {
             
             // Add workout button
             ZStack {
-                // 1️⃣ Your main content
+                // Your main content
                 ScrollView {
                     VStack(spacing: 20) {
                         // your other content here (calendar, goals, etc.)
@@ -155,7 +157,7 @@ struct HomePageView: View {
                     .padding(80) // make room so content isn’t hidden by the button
                 }
 
-                // 2️⃣ Floating button
+                // Floating button
                 VStack {
                     Spacer() // push it to the bottom
                     HStack {
@@ -173,6 +175,32 @@ struct HomePageView: View {
                                 .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 3)
                         }
                         .padding()
+                        
+//                        Camera Button
+                        if let image = capturedImage {
+                            Image(uiImage: image)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(height: 200)
+                                .cornerRadius(10)
+                                .padding()
+                        }
+
+                        Button(action: {
+                            showCamera = true
+                        }) {
+                            Label("Open Camera", systemImage: "camera.fill")
+                                .font(.headline)
+                                .padding()
+                                .frame(maxWidth: .infinity)
+                                .background(Color.blue)
+                                .foregroundColor(.white)
+                                .cornerRadius(12)
+                                .padding()
+                        }
+                        .sheet(isPresented: $showCamera) {
+                                CameraPicker(selectedImage: $capturedImage)
+                            }
                     }
                 }
             }
