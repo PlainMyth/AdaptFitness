@@ -32,7 +32,7 @@ struct AdaptFitnessApp: App {
 //            } else {
 //                LoginView(isLoggedIn: $isLoggedIn)
 //            }
-            HomePageView(isLoggedIn: $isLoggedIn)
+            HomePageView(isLoggedIn: $isLoggedIn, user: .exampleUser)
         }
         .modelContainer(sharedModelContainer)
     }

@@ -14,7 +14,6 @@ struct Meal: Codable, Identifiable {
     var foods: [FoodEntry]
 }
 
-// MARK: - Meal Example
 extension Meal {
     static let example = Meal(
         id: UUID().uuidString,

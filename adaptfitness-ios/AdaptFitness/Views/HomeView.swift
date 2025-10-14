@@ -15,7 +15,7 @@ struct HomePageView: View {
     @State private var showingAddWorkoutForm = false
     
 //    hardcoded data used to mimic returned request
-    public var streak: Int = 1
+    let user: User
     
     // goals
     @State private var goals: [(title: String, progress: Double, color: Color, icon: String)] = [
@@ -39,7 +39,7 @@ struct HomePageView: View {
                         .foregroundColor(.orange)
                         .font(.system(size: 18, weight: .bold))
                     
-                    Text("\(streak)") // hardcoded streak number
+                    Text("\(user.loginStreak ?? 0)") // hardcoded streak number
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.black)
                 }
@@ -234,6 +234,10 @@ struct EntryRow: View {
 // Preview
 struct HomePageView_Previews: PreviewProvider {
     static var previews: some View {
-        HomePageView(isLoggedIn: .constant(true))
+        //this part is for later once we get the login working
+//        HomePageView(isLoggedIn: .constant(true), user: viewModel.currentUser)
+        
+        // hardcoded for now
+        HomePageView(isLoggedIn: .constant(true), user: .exampleUser)
     }
 }
