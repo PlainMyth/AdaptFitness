@@ -8,10 +8,9 @@
 import SwiftUI
 
 struct GoalTileView: View {
-    let progress: Double // 0.0 to 1.0
+    let goal: Goal
+    // TODO: Implement different colored rings
     let color: Color
-    let title: String
-    let icon: String
 
     var body: some View {
         HStack(spacing: 10) {
@@ -20,33 +19,45 @@ struct GoalTileView: View {
                     .stroke(Color.gray.opacity(0.2), lineWidth: 10)
 
                 Circle()
-                    .trim(from: 0, to: progress)
+                    .trim(from: 0, to: goal.progress / goal.goalAmount)
                     .stroke(
                         color,
                         style: StrokeStyle(lineWidth: 10, lineCap: .round)
                     )
                     .rotationEffect(.degrees(-90))
-                    .animation(.easeOut(duration: 0.8), value: progress)
+                    .animation(.easeOut(duration: 0.8), value: goal.progress)
 
                 VStack {
-                    Image(systemName: icon)
+                    Image(systemName: goal.icon)
                         .foregroundColor(color)
                         .font(.system(size: 20))
-                    Text("\(Int(progress * 100))%")
+                    Text("\(Int(goal.progress / goal.goalAmount * 100))%")
                         .font(.headline)
                         .foregroundColor(.primary)
                 }
             }
             .frame(width: 80, height: 80)
             
-            VStack(spacing: 10) {
-                Text(title)
+            VStack(alignment: .leading, spacing: 10) {
+                Text(goal.type.capitalized)
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                
+                Text("\(Int(goal.progress))/")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
+                
+                Text("\(Int(goal.goalAmount)) \(goal.goalUnits)")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                
+                Text("Window: \(goal.window.capitalized)")
+                    .font(.caption)
+                    .foregroundColor(.gray)
             }
-            
         }
         .padding(.vertical, 10)
-        .frame(width: 200, height: 180)
+        .frame(width: 250, height: 120)
     }
 }
+
