@@ -4,12 +4,16 @@
 
 - [x] Created GitHub organization
 - [x] Repository accessible in Railway
-- [ ] Backend deployed from organization repo
-- [ ] PostgreSQL database added
-- [ ] Environment variables configured (10 total)
-- [ ] Deployment successful (check logs)
-- [ ] Production URL obtained
-- [ ] Backend tested successfully
+- [x] Backend deployed from organization repo
+- [x] PostgreSQL database added
+- [x] Root directory set to `adaptfitness-backend`
+- [x] Build successful (all dependencies installed)
+- [x] Container running successfully
+- [x] Production URL obtained: `https://adaptfitness-production.up.railway.app`
+- [ ] Environment variables configured (11 total)
+- [ ] Initial table creation with TYPEORM_SYNCHRONIZE=true
+- [ ] Backend fully functional
+- [ ] Production lock-down with TYPEORM_SYNCHRONIZE=false
 
 ---
 
@@ -19,25 +23,30 @@
 
 Copy these into Railway → Variables tab:
 
+**Database Configuration (from PostgreSQL service):**
+- [ ] DATABASE_HOST (copy from PGHOST)
+- [ ] DATABASE_PORT (copy from PGPORT)
+- [ ] DATABASE_USERNAME (copy from PGUSER)
+- [ ] DATABASE_PASSWORD (copy from PGPASSWORD)
+- [ ] DATABASE_NAME (copy from PGDATABASE)
+
+**Database Schema (⚠️ SET TO 'true' INITIALLY):**
+- [ ] TYPEORM_SYNCHRONIZE (true for first deploy, false after)
+
+**JWT Configuration (from local .env):**
+- [ ] JWT_SECRET (your 128-char hex secret)
+- [ ] JWT_EXPIRES_IN (15m)
+
 **App Configuration:**
-- [ ] JWT_SECRET (128 characters)
-- [ ] JWT_EXPIRES_IN (24h)
 - [ ] NODE_ENV (production)
 - [ ] PORT (3000)
 - [ ] CORS_ORIGIN (*)
-
-**Database Configuration:**
-- [ ] DATABASE_HOST (${{Postgres.PGHOST}})
-- [ ] DATABASE_PORT (${{Postgres.PGPORT}})
-- [ ] DATABASE_USERNAME (${{Postgres.PGUSER}})
-- [ ] DATABASE_PASSWORD (${{Postgres.PGPASSWORD}})
-- [ ] DATABASE_NAME (${{Postgres.PGDATABASE}})
 
 ---
 
 ## 🌐 Production URL
 
-**Your Railway URL:** _________________________________________
+**Your Railway URL:** `https://adaptfitness-production.up.railway.app`
 
 ---
 
@@ -49,7 +58,7 @@ Once deployed, test with:
 cd /Users/csuftitan/Downloads/AdaptFitness/AdaptFitness/adaptfitness-backend
 
 # Test your production backend
-./test-railway.sh https://YOUR-RAILWAY-URL
+./test-railway.sh https://adaptfitness-production.up.railway.app
 ```
 
 ---
