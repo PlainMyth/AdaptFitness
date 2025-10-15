@@ -16,21 +16,14 @@ struct HomePageView: View {
     @State private var showCamera = false
     @State private var capturedImage: UIImage?
     
-//    hardcoded data used to mimic returned request
-    let user: User
+//    hardcoded data used to mimic returned request ============
     
-    // goals
-//    @State private var goals: [(title: String, progress: Double, color: Color, icon: String)] = [
-//            ("Workout Streak", 0.75, .green, "flame.fill"),
-//            ("Calories", 0.60, .orange, "bolt.heart"),
-//            ("Steps", 0.90, .blue, "figure.walk"),
-//            ("Sleep", 0.45, .purple, "bed.double.fill")
-//        ]
+    let user: User
     @State private var goals: [Goal] = Goal.exampleGoals
     @State private var fitnessRecords: [FitnessRecord] = FitnessRecord.exampleRecords
-
+    @State private var foods: [FoodEntry] = FoodEntry.exampleFoodEntries
     
-    
+//  ============================================================
     
     var body: some View {
         VStack {
@@ -144,8 +137,7 @@ struct HomePageView: View {
             // TODO: Test entries
             ScrollView {
                 VStack(spacing: 20) {
-                    EntryRow(date: "01/01", images: ["garbanzo", "garbanzo2", "garbanzo3"])
-                    EntryRow(date: "01/02", images: ["chicken", "chicken2", "chicken3"])
+                    MealsView(meals: Meal.exampleMeals)
                 }
                 .padding(.top, 20)
             }
@@ -236,32 +228,6 @@ struct DonutStat: View {
                     .foregroundColor(.secondary)
             }
         }
-    }
-}
-
-struct EntryRow: View {
-    let date: String
-    let images: [String]
-    
-    var body: some View {
-        HStack {
-            Text(date)
-                .font(.headline)
-                .frame(width: 60)
-            
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack {
-                    ForEach(images, id: \.self) { image in
-                        Image(image) // must be in Assets.xcassets
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 80, height: 80)
-                            .cornerRadius(8)
-                    }
-                }
-            }
-        }
-        .padding(.horizontal)
     }
 }
 
