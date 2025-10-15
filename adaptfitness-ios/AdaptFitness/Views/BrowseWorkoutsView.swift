@@ -7,13 +7,13 @@
 
 import SwiftUI
 
-struct Workout: Identifiable {
-    let id = UUID()
-    let name: String
-    let intensity: String
-    let calories: String
-    let systemImage: String
-}
+//struct Workout: Identifiable {
+//    let id = UUID()
+//    let name: String
+//    let intensity: String
+//    let calories: String
+//    let systemImage: String
+//}
 
 struct BrowseWorkoutsView: View {
     

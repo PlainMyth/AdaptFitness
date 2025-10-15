@@ -12,19 +12,18 @@ struct HomePageView: View {
     let calendar = Calendar.current
     @State private var days: [Day] = []
     @State private var showingAddGoalForm = false
+    @State private var showingAddWorkoutForm = false
+    @State private var showCamera = false
+    @State private var capturedImage: UIImage?
     
-//    hardcoded data used to mimic returned request
-    public var streak: Int = 1
+//    hardcoded data used to mimic returned request ============
     
-    // goals
-    @State private var goals: [(title: String, progress: Double, color: Color, icon: String)] = [
-            ("Workout Streak", 0.75, .green, "flame.fill"),
-            ("Calories", 0.60, .orange, "bolt.heart"),
-            ("Steps", 0.90, .blue, "figure.walk"),
-            ("Sleep", 0.45, .purple, "bed.double.fill")
-        ]
+    let user: User
+    @State private var goals: [Goal] = Goal.exampleGoals
+    @State private var fitnessRecords: [FitnessRecord] = FitnessRecord.exampleRecords
+    @State private var foods: [FoodEntry] = FoodEntry.exampleFoodEntries
     
-    
+//  ============================================================
     
     var body: some View {
         VStack {
@@ -38,7 +37,7 @@ struct HomePageView: View {
                         .foregroundColor(.orange)
                         .font(.system(size: 18, weight: .bold))
                     
-                    Text("\(streak)") // hardcoded streak number
+                    Text("\(user.loginStreak ?? 0)") // hardcoded streak number
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.black)
                 }
@@ -65,6 +64,9 @@ struct HomePageView: View {
                 HorizontalCalendar(days: days)
                     .onAppear {
                         let calendar = Calendar.current
+                        
+                        //the value in this array should be the current day.
+                        //So we should check all the previous days until we go back to Monday
                         let mockCompletedDates: [Date] = [
                             calendar.date(byAdding: .day, value: -2, to: Date())!,
                             calendar.date(byAdding: .day, value: 1, to: Date())!,
@@ -74,20 +76,17 @@ struct HomePageView: View {
                     }
             }
             
+//          GOAL BAR =================================
             Text("Goals")
                 .font(.title)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 40) {
-                    ForEach(Array(goals.enumerated()), id: \.offset) { index, goal in
-                        GoalTileView(
-                            progress: goal.progress,
-                            color: goal.color,
-                            title: goal.title,
-                            icon: goal.icon
-                        )
-                    }
+                    ForEach(goals) { goal in
+                                        GoalTileView(goal: goal, color: .blue)
+                                    }
+//                  GOAL FORM =================================
                     Button(action: {
                             showingAddGoalForm = true
                     }) {
@@ -95,7 +94,7 @@ struct HomePageView: View {
                                 ZStack {
                                     Circle()
                                         .stroke(Color.gray.opacity(0.2), lineWidth: 10)
-                                        .frame(width: 100, height: 100)
+                                        .frame(width: 80, height: 80)
 
                                     Image(systemName: "plus")
                                         .font(.system(size: 24, weight: .bold))
@@ -114,6 +113,7 @@ struct HomePageView: View {
                     }
                 }
                 .padding(.horizontal)
+                .contentMargins(.horizontal, 20)
             
 //           spacing color
             .background(Color(.systemGroupedBackground).ignoresSafeArea())
@@ -124,8 +124,9 @@ struct HomePageView: View {
                 // Example: Simulate progress updates after data fetch
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                     withAnimation {
-                        goals[0].progress = 0.9
-                        goals[1].progress = 0.7
+                        // TODO: Animations not working
+//                        goals[0].progress = goals[0].progress / goals[0].goalAmount
+//                        goals[1].progress = goals[1].progress / goals[1].goalAmount
                     }
                 }
             }
@@ -133,12 +134,73 @@ struct HomePageView: View {
     
             
             // Entries
+            // TODO: Test entries
             ScrollView {
                 VStack(spacing: 20) {
-                    EntryRow(date: "01/01", images: ["garbanzo", "garbanzo2", "garbanzo3"])
-                    EntryRow(date: "01/02", images: ["chicken", "chicken2", "chicken3"])
+                    MealsView(meals: Meal.exampleMeals)
                 }
                 .padding(.top, 20)
+            }
+            
+            // Add workout button
+            ZStack {
+                // Your main content
+                ScrollView {
+                    VStack(spacing: 20) {
+                        // your other content here (calendar, goals, etc.)
+                    }
+                    .padding(80) // make room so content isn’t hidden by the button
+                }
+
+                // Floating button
+                VStack {
+                    Spacer() // push it to the bottom
+                    HStack {
+                        Spacer() // push it to bottom-right
+//                        Button(action: {
+//                            // Action when tapped
+//                            showingAddWorkoutForm = true
+//                        }) {
+//                            Image(systemName: "plus")
+//                                .font(.system(size: 24, weight: .bold))
+//                                .foregroundColor(.white)
+//                                .padding()
+//                                .background(Color.blue)
+//                                .clipShape(Circle())
+//                                .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 3)
+//                        }
+//                        .padding()
+                        
+//                        Camera Button
+                        // TODO: Camera not working in simulation, check real phone, then Info.plist
+                        if let image = capturedImage {
+                            Image(uiImage: image)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(height: 200)
+                                .cornerRadius(10)
+                                .padding()
+                        }
+
+                        Button(action: {
+                            showCamera = true
+                        }) {
+//                            Label("Scan Barcode", systemImage: "camera.fill")
+                            Image(systemName: "barcode")
+                                .font(.system(size: 24, weight: .bold))
+                                .padding()
+//                                .frame(maxWidth: .infinity)
+                                .background(Color.blue)
+                                .foregroundColor(.white)
+//                                .cornerRadius(12)
+                                .clipShape(Circle())
+                                .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 3)
+                        }
+                        .sheet(isPresented: $showCamera) {
+                                CameraPicker(selectedImage: $capturedImage)
+                            }
+                    }
+                }
             }
             
             // Footer Tabs
@@ -169,35 +231,13 @@ struct DonutStat: View {
     }
 }
 
-struct EntryRow: View {
-    let date: String
-    let images: [String]
-    
-    var body: some View {
-        HStack {
-            Text(date)
-                .font(.headline)
-                .frame(width: 60)
-            
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack {
-                    ForEach(images, id: \.self) { image in
-                        Image(image) // must be in Assets.xcassets
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 80, height: 80)
-                            .cornerRadius(8)
-                    }
-                }
-            }
-        }
-        .padding(.horizontal)
-    }
-}
-
 // Preview
 struct HomePageView_Previews: PreviewProvider {
     static var previews: some View {
-        HomePageView(isLoggedIn: .constant(true))
+        //this part is for later once we get the login working
+//        HomePageView(isLoggedIn: .constant(true), user: viewModel.currentUser)
+        
+        // hardcoded for now
+        HomePageView(isLoggedIn: .constant(true), user: .exampleUser)
     }
 }
