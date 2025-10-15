@@ -1,5 +1,16 @@
 # Frontend Integration Analysis
 
+## 🌐 Production Backend URL
+
+**Live API:** `https://adaptfitness-production.up.railway.app`
+
+Use this URL in your iOS app's `APIService.swift`:
+```swift
+private let baseURL = "https://adaptfitness-production.up.railway.app"
+```
+
+---
+
 ## 🎨 What the Frontend Team Added (Latest from Main)
 
 ### New iOS Models
