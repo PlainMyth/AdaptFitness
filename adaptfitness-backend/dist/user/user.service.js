@@ -31,11 +31,23 @@ let UserService = class UserService {
         const user = this.userRepository.create(createUserDto);
         return this.userRepository.save(user);
     }
-    async findByEmail(email) {
+    async findByEmailForAuth(email) {
         return this.userRepository.findOne({ where: { email } });
     }
-    async findById(id) {
+    async findByEmail(email) {
+        return this.userRepository.findOne({
+            where: { email },
+            select: ['id', 'email', 'firstName', 'lastName', 'dateOfBirth', 'height', 'weight', 'gender', 'activityLevel', 'activityLevelMultiplier', 'isActive', 'createdAt', 'updatedAt']
+        });
+    }
+    async findByIdForAuth(id) {
         return this.userRepository.findOne({ where: { id } });
+    }
+    async findById(id) {
+        return this.userRepository.findOne({
+            where: { id },
+            select: ['id', 'email', 'firstName', 'lastName', 'dateOfBirth', 'height', 'weight', 'gender', 'activityLevel', 'activityLevelMultiplier', 'isActive', 'createdAt', 'updatedAt']
+        });
     }
     async update(id, updateUserDto) {
         const user = await this.findById(id);

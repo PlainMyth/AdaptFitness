@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/6</span>
+                <span class='fraction'>6/6</span>
             </div>
         
             
@@ -37,16 +37,16 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/2</span>
+                <span class='fraction'>2/2</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/4</span>
+                <span class='fraction'>4/4</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -145,15 +145,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -164,11 +160,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -186,7 +182,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -203,37 +203,37 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * Main Application Service
- * 
+ *
  * This service provides basic application functionality and information.
  * It handles the business logic for root-level endpoints like health checks
  * and welcome messages.
- * 
+ *
  * Key responsibilities:
  * - Provide health status information
  * - Generate welcome messages and API documentation
  * - Serve as the main service for basic app operations
  */
 &nbsp;
-<span class="cstat-no" title="statement not covered" >import { Injectable } from '@nestjs/common';</span>
+import { Injectable } from '@nestjs/common';
 &nbsp;
 // @Injectable decorator makes this class available for dependency injection
 @Injectable()
-export <span class="cstat-no" title="statement not covered" >class <span class="cstat-no" title="statement not covered" ><span class="cstat-no" title="statement not covered" >AppService </span>{</span></span>
+export class AppService {
   /**
    * Get Health Status
-   * 
+   *
    * Returns the current health status of the API service.
    * This is used by monitoring tools, load balancers, and health check systems.
-   * 
+   *
    * What it returns:
    * - Current status (always 'ok' if the service is running)
    * - Timestamp of when the check was performed
    * - Service name and version information
-   * 
+   *
    * @returns Object containing health status information
    */
-<span class="fstat-no" title="function not covered" >  getHealth(</span>) {
-<span class="cstat-no" title="statement not covered" >    return {</span>
+  getHealth() {
+    return {
       status: 'ok',                                    // Service is running and healthy
       timestamp: new Date().toISOString(),            // Current timestamp in ISO format
       service: 'AdaptFitness API',                    // Name of the service
@@ -243,19 +243,19 @@ export <span class="cstat-no" title="statement not covered" >class <span class="
 &nbsp;
   /**
    * Get Welcome Message
-   * 
+   *
    * Returns a welcome message and basic API information for new users or developers.
    * This provides an overview of what the API does and what endpoints are available.
-   * 
+   *
    * What it returns:
    * - Welcome message and description
    * - API version information
    * - List of available endpoint categories
-   * 
+   *
    * @returns Object containing welcome message and API information
    */
-<span class="fstat-no" title="function not covered" >  getWelcome(</span>) {
-<span class="cstat-no" title="statement not covered" >    return {</span>
+  getWelcome() {
+    return {
       message: 'Welcome to AdaptFitness API',         // Main welcome message
       description: 'A fitness app that redefines functionality and ease of getting into fitness!', // App description
       version: '1.0.0',                               // Current API version
@@ -277,7 +277,7 @@ export <span class="cstat-no" title="statement not covered" >class <span class="
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-09-18T05:45:35.860Z
+                at 2025-10-09T21:52:04.049Z
             </div>
         <script src="../prettify.js"></script>
         <script>

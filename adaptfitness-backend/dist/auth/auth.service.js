@@ -46,6 +46,7 @@ exports.AuthService = void 0;
 const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
 const user_service_1 = require("../user/user.service");
+const password_validator_1 = require("./validators/password.validator");
 const bcrypt = __importStar(require("bcryptjs"));
 let AuthService = class AuthService {
     constructor(userService, jwtService) {
@@ -53,7 +54,7 @@ let AuthService = class AuthService {
         this.jwtService = jwtService;
     }
     async validateUser(email, password) {
-        const user = await this.userService.findByEmail(email);
+        const user = await this.userService.findByEmailForAuth(email);
         if (user && await bcrypt.compare(password, user.password)) {
             const { password, ...result } = user;
             return result;
@@ -78,6 +79,14 @@ let AuthService = class AuthService {
     }
     async register(registerDto) {
         try {
+            const passwordValidation = password_validator_1.PasswordValidator.validate(registerDto.password);
+            if (!passwordValidation.valid) {
+                throw new common_1.BadRequestException({
+                    message: 'Password does not meet security requirements',
+                    errors: passwordValidation.errors,
+                    requirements: password_validator_1.PasswordValidator.getRequirements(),
+                });
+            }
             const hashedPassword = await bcrypt.hash(registerDto.password, 10);
             const user = await this.userService.create({
                 ...registerDto,
@@ -95,7 +104,7 @@ let AuthService = class AuthService {
             };
         }
         catch (error) {
-            if (error instanceof common_1.ConflictException) {
+            if (error instanceof common_1.ConflictException || error instanceof common_1.BadRequestException) {
                 throw error;
             }
             throw new Error('Failed to create user');

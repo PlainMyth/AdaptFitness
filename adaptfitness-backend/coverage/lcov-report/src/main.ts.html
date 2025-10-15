@@ -25,14 +25,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/11</span>
+                <span class='fraction'>0/13</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/4</span>
+                <span class='fraction'>0/8</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/11</span>
+                <span class='fraction'>0/13</span>
             </div>
         
             
@@ -129,7 +129,12 @@
 <a name='L64'></a><a href='#L64'>64</a>
 <a name='L65'></a><a href='#L65'>65</a>
 <a name='L66'></a><a href='#L66'>66</a>
-<a name='L67'></a><a href='#L67'>67</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L67'></a><a href='#L67'>67</a>
+<a name='L68'></a><a href='#L68'>68</a>
+<a name='L69'></a><a href='#L69'>69</a>
+<a name='L70'></a><a href='#L70'>70</a>
+<a name='L71'></a><a href='#L71'>71</a>
+<a name='L72'></a><a href='#L72'>72</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -147,6 +152,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -166,8 +172,12 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -197,15 +207,15 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * Main Application Entry Point
- * 
+ *
  * This is the starting point of the AdaptFitness API server.
  * It configures the NestJS application, sets up middleware,
  * and starts the server on the specified port.
- * 
+ *
  * Key responsibilities:
  * - Initialize the NestJS application
  * - Configure CORS for frontend communication
- * - Set up global validation pipes
+ * - Set up global validation pipes for data validation
  * - Start the HTTP server
  * - Display startup information
  */
@@ -213,13 +223,14 @@
 <span class="cstat-no" title="statement not covered" >import { NestFactory } from '@nestjs/core';</span>
 <span class="cstat-no" title="statement not covered" >import { ValidationPipe } from '@nestjs/common';</span>
 <span class="cstat-no" title="statement not covered" >import { AppModule } from './app.module';</span>
+<span class="cstat-no" title="statement not covered" >import { validateEnvironment } from './config/env.validation';</span>
 &nbsp;
 /**
  * Bootstrap Function
- * 
+ *
  * This function initializes and starts the AdaptFitness API server.
  * It's called when the application starts up.
- * 
+ *
  * What it does:
  * 1. Creates the NestJS application instance
  * 2. Configures CORS for frontend communication
@@ -228,6 +239,9 @@
  * 5. Displays startup information
  */
 async function <span class="fstat-no" title="function not covered" >bootstrap(</span>) {
+  // Validate environment variables before starting the application
+<span class="cstat-no" title="statement not covered" >  validateEnvironment();</span>
+  
   // Create the NestJS application instance using our main AppModule
   const app = <span class="cstat-no" title="statement not covered" >await NestFactory.create(AppModule);</span>
   
@@ -241,7 +255,8 @@ async function <span class="fstat-no" title="function not covered" >bootstrap(</
   });
   
   // Set up global validation pipe for automatic data validation
-  // This ensures all incoming data is validated according to DTO rules
+  // Note: We use manual service-level validation instead of class-validator decorators
+  // This provides more control and better error handling
 <span class="cstat-no" title="statement not covered" >  app.useGlobalPipes(new ValidationPipe({</span>
     whitelist: true,        // Strip out properties not defined in DTOs
     forbidNonWhitelisted: true, // Throw error if unknown properties are sent
@@ -268,7 +283,7 @@ async function <span class="fstat-no" title="function not covered" >bootstrap(</
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-09-18T05:45:35.860Z
+                at 2025-10-09T21:52:04.049Z
             </div>
         <script src="../prettify.js"></script>
         <script>
