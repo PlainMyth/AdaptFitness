@@ -83,10 +83,20 @@ login() {
 
 # Function to get current week dates
 get_current_week() {
-    # Get Monday of current week
-    WEEK_START=$(date -v-mon +%Y-%m-%d)
-    # Get Sunday of current week  
-    WEEK_END=$(date -v-sun +%Y-%m-%d)
+    # Get current date
+    TODAY=$(date +%Y-%m-%d)
+    
+    # Get day of week (1=Monday, 7=Sunday)
+    DOW=$(date +%u)
+    
+    # Calculate Monday of current week
+    DAYS_TO_MONDAY=$((DOW - 1))
+    WEEK_START=$(date -v-${DAYS_TO_MONDAY}d +%Y-%m-%d)
+    
+    # Calculate Sunday of current week
+    DAYS_TO_SUNDAY=$((7 - DOW))
+    WEEK_END=$(date -v+${DAYS_TO_SUNDAY}d +%Y-%m-%d)
+    
     echo "$WEEK_START,$WEEK_END"
 }
 
@@ -183,7 +193,7 @@ echo "🏋️‍♀️ Creating Sample Workouts..."
 
 # Workout 1: Strength training
 echo "Creating strength workout..."
-make_request POST "/workout" '{
+make_request POST "/workouts" '{
     "name": "Upper Body Strength",
     "description": "Chest, shoulders, and arms workout",
     "startTime": "'$(date -v-2d +%Y-%m-%dT10:00:00Z)'",
@@ -199,7 +209,7 @@ make_request POST "/workout" '{
 
 # Workout 2: Cardio
 echo "Creating cardio workout..."
-make_request POST "/workout" '{
+make_request POST "/workouts" '{
     "name": "Morning Run",
     "description": "5K morning run",
     "startTime": "'$(date -v-1d +%Y-%m-%dT07:00:00Z)'",
@@ -215,7 +225,7 @@ make_request POST "/workout" '{
 
 # Workout 3: Another strength workout
 echo "Creating another strength workout..."
-make_request POST "/workout" '{
+make_request POST "/workouts" '{
     "name": "Lower Body Strength",
     "description": "Legs and glutes workout",
     "startTime": "'$(date +%Y-%m-%dT18:00:00Z)'",
@@ -268,7 +278,7 @@ echo "   • GET /goal-calendar/current-week - View current week goals"
 echo "   • GET /goal-calendar/statistics - View goal statistics"
 echo "   • GET /goal-calendar/calendar-view - Calendar visualization"
 echo "   • POST /goal-calendar/update-all-progress - Update progress"
-echo "   • POST /workout - Create sample workouts"
+echo "   • POST /workouts - Create sample workouts"
 echo ""
 echo "🔑 Test User Credentials:"
 echo "   Email: $TEST_EMAIL"

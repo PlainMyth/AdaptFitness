@@ -163,7 +163,9 @@ export class GoalCalendarService {
     const workouts = await this.workoutService.findAll(userId);
     const weekWorkouts = workouts.filter(workout => {
       const workoutDate = new Date(workout.startTime);
-      return workoutDate >= goal.weekStartDate && workoutDate <= goal.weekEndDate;
+      const startDate = new Date(goal.weekStartDate);
+      const endDate = new Date(goal.weekEndDate);
+      return workoutDate >= startDate && workoutDate <= endDate;
     });
 
     // Calculate current value based on goal type
@@ -343,7 +345,7 @@ export class GoalCalendarService {
     if (workouts.length === 0) return 0;
     
     // Get unique dates from workouts
-    const workoutDates = new Set();
+    const workoutDates = new Set<string>();
     workouts.forEach(workout => {
       const date = new Date(workout.startTime).toISOString().split('T')[0];
       workoutDates.add(date);
@@ -358,7 +360,7 @@ export class GoalCalendarService {
     currentDate.setHours(0, 0, 0, 0);
     
     for (let i = sortedDates.length - 1; i >= 0; i--) {
-      const workoutDate = new Date(sortedDates[i] as string);
+      const workoutDate = new Date(sortedDates[i]);
       const daysDiff = Math.floor((currentDate.getTime() - workoutDate.getTime()) / (1000 * 60 * 60 * 24));
       
       if (daysDiff === streak) {
