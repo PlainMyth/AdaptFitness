@@ -25,12 +25,12 @@ struct MealsView: View {
                                 ForEach(dayMeals) { meal in
                                     // TODO: Display correct information for each day and probably group them by
                                     // breakfast, lunch and dinner
-                                    ForEach(meal.foods) { food in
+//                                    ForEach(meal.foods) { food in
                                         EntryRow(
                                             date: meal.dayLabel, // optional
-                                            foods: [food.name] // or food.image if you have images
+                                            foods: meal.foods // or food.image if you have images
                                         )
-                                    }
+//                                    }
                                 }
                             }
                             .padding(.horizontal)

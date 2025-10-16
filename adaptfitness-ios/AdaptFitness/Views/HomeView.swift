@@ -84,8 +84,8 @@ struct HomePageView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 40) {
                     ForEach(goals) { goal in
-                                        GoalTileView(goal: goal, color: .blue)
-                                    }
+                        GoalTileView(goal: goal, color: .blue)
+                    }
 //                  GOAL FORM =================================
                     Button(action: {
                             showingAddGoalForm = true
@@ -140,37 +140,18 @@ struct HomePageView: View {
                     MealsView(meals: Meal.exampleMeals)
                 }
                 .padding(.top, 20)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             
-            // Add workout button
+            // Originally meant for other things, but now idk
             ZStack {
-                // Your main content
-                ScrollView {
-                    VStack(spacing: 20) {
-                        // your other content here (calendar, goals, etc.)
-                    }
-                    .padding(80) // make room so content isn’t hidden by the button
-                }
 
                 // Floating button
                 VStack {
-                    Spacer() // push it to the bottom
                     HStack {
                         Spacer() // push it to bottom-right
-//                        Button(action: {
-//                            // Action when tapped
-//                            showingAddWorkoutForm = true
-//                        }) {
-//                            Image(systemName: "plus")
-//                                .font(.system(size: 24, weight: .bold))
-//                                .foregroundColor(.white)
-//                                .padding()
-//                                .background(Color.blue)
-//                                .clipShape(Circle())
-//                                .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 3)
-//                        }
-//                        .padding()
-                        
+
 //                        Camera Button
                         // TODO: Camera not working in simulation, check real phone, then Info.plist
                         if let image = capturedImage {
@@ -185,51 +166,30 @@ struct HomePageView: View {
                         Button(action: {
                             showCamera = true
                         }) {
-//                            Label("Scan Barcode", systemImage: "camera.fill")
+    //                            Label("Scan Barcode", systemImage: "camera.fill")
                             Image(systemName: "barcode")
                                 .font(.system(size: 24, weight: .bold))
                                 .padding()
-//                                .frame(maxWidth: .infinity)
+    //                                .frame(maxWidth: .infinity)
                                 .background(Color.blue)
                                 .foregroundColor(.white)
-//                                .cornerRadius(12)
+    //                                .cornerRadius(12)
                                 .clipShape(Circle())
                                 .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 3)
                         }
                         .sheet(isPresented: $showCamera) {
-                                CameraPicker(selectedImage: $capturedImage)
-                            }
+                            CameraPicker(selectedImage: $capturedImage)
+                        }
                     }
                 }
             }
             
             // Footer Tabs
             FooterTabBar()
-            
         }
     }
 }
 
-struct DonutStat: View {
-    let label: String
-    let value: String
-    
-    var body: some View {
-        VStack {
-            Circle()
-                .strokeBorder(Color.gray, lineWidth: 5)
-                .frame(width: 70, height: 70)
-            
-            VStack {
-                Text(label)
-                    .font(.caption)
-                Text(value)
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-            }
-        }
-    }
-}
 
 // Preview
 struct HomePageView_Previews: PreviewProvider {
