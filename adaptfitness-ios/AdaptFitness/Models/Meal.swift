@@ -28,14 +28,14 @@ extension Meal {
             userId: "user123",
             date: Date(),
             type: "breakfast",
-            foods: [FoodEntry.exampleFoodEntries[0], FoodEntry.exampleFoodEntries[1]]
+            foods: [FoodEntry.exampleFoodEntries[0], FoodEntry.exampleFoodEntries[2]]
         ),
         Meal(
             id: UUID().uuidString,
             userId: "user123",
             date: Date().addingTimeInterval(-86400),
             type: "breakfast",
-            foods: [FoodEntry.exampleFoodEntries[2], FoodEntry.exampleFoodEntries[3]]
+            foods: [FoodEntry.exampleFoodEntries[1], FoodEntry.exampleFoodEntries[3], FoodEntry.exampleFoodEntries[4]]
         )
     ]
 }

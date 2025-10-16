@@ -19,7 +19,7 @@ extension FoodEntry {
     static let exampleFoodEntries: [FoodEntry] = [
         FoodEntry(
             id: UUID().uuidString,
-            name: "Grilled Chicken Breast",
+            name: "Egg",
             barcode: "0123456789012",
             quantity: 150,
             unit: "g",
@@ -35,7 +35,7 @@ extension FoodEntry {
         ),
         FoodEntry(
             id: UUID().uuidString,
-            name: "Brown Rice",
+            name: "Garbanzo Beans",
             barcode: "0987654321098",
             quantity: 200,
             unit: "g",
@@ -51,7 +51,7 @@ extension FoodEntry {
         ),
         FoodEntry(
             id: UUID().uuidString,
-            name: "Brown Rice",
+            name: "Sauce",
             barcode: "0987654321098",
             quantity: 200,
             unit: "g",
