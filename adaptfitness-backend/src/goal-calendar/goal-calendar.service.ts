@@ -123,9 +123,9 @@ export class GoalCalendarService {
     Object.assign(goal, updateGoalCalendarDto);
     
     // If dates are being updated, validate them
-    if (updateGoalCalendarDto.weekStartDate || updateGoalCalendarDto.weekEndDate) {
-      const weekStart = updateGoalCalendarDto.weekStartDate ? new Date(updateGoalCalendarDto.weekStartDate) : goal.weekStartDate;
-      const weekEnd = updateGoalCalendarDto.weekEndDate ? new Date(updateGoalCalendarDto.weekEndDate) : goal.weekEndDate;
+    if ((updateGoalCalendarDto as any).weekStartDate || (updateGoalCalendarDto as any).weekEndDate) {
+      const weekStart = (updateGoalCalendarDto as any).weekStartDate ? new Date((updateGoalCalendarDto as any).weekStartDate) : goal.weekStartDate;
+      const weekEnd = (updateGoalCalendarDto as any).weekEndDate ? new Date((updateGoalCalendarDto as any).weekEndDate) : goal.weekEndDate;
       
       if (weekStart >= weekEnd) {
         throw new BadRequestException('Week start date must be before week end date');
