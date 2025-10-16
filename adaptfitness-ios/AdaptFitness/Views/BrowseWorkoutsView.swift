@@ -16,6 +16,7 @@ import SwiftUI
 //}
 
 struct BrowseWorkoutsView: View {
+    @State private var workoutToShow: Workout?
     
     let workouts: [Workout] = [
         Workout(name: "Add Custom Workout", intensity: "", calories: "", systemImage: "plus.circle"),
@@ -35,72 +36,64 @@ struct BrowseWorkoutsView: View {
                 .font(.largeTitle)
                 .bold()
                 .padding(.top, 20)
-           
-            // Exit & Favorites Buttons
-            HStack {
-                Button(action: {
-                    print("Exit tapped")
-                }) {
-                    Image(systemName: "xmark.circle")
-                        .font(.title)
-                }
-                
-                Spacer()
-                
-                Button(action: {
-                    print("Favorite tapped")
-                }) {
-                    Image(systemName: "star.fill")
-                        .font(.title)
-                }
-            }
-            .padding()
             
             ScrollView {
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 20) {
                     ForEach(workouts) { workout in
-                        WorkoutTile(workout: workout)
+                        WorkoutTile(workout: workout) {
+                            print("BrowseWorkoutsView - Tapped workout: \(workout.name)")
+                            workoutToShow = workout
+                            print("BrowseWorkoutsView - Set workoutToShow to: \(workout.name)")
+                        }
                     }
                 }
                 .padding()
             }
             
             Spacer()
-            
-            // Footer buttons
-            FooterTabBar()
+        }
+        .sheet(item: $workoutToShow) { workout in
+            WorkoutDetailView(workout: workout)
         }
     }
 }
 
 struct WorkoutTile: View {
     let workout: Workout
+    let onTap: () -> Void
     
     var body: some View {
-        VStack(spacing: 10) {
-            Image(systemName: workout.systemImage)
-                .resizable()
-                .scaledToFit()
-                .frame(height: 60)
-                .padding()
-            
-            Text(workout.name)
-                .font(.headline)
-            
-            if !workout.intensity.isEmpty {
-                Text("Intensity: \(workout.intensity)")
-                    .font(.subheadline)
+        Button(action: {
+            print("WorkoutTile button tapped for: \(workout.name)")
+            onTap()
+        }) {
+            VStack(spacing: 10) {
+                Image(systemName: workout.systemImage)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 60)
+                    .padding()
+                
+                Text(workout.name)
+                    .font(.headline)
+                
+                if !workout.intensity.isEmpty {
+                    Text("Intensity: \(workout.intensity)")
+                        .font(.subheadline)
+                }
+                if !workout.calories.isEmpty {
+                    Text("Est Cal: \(workout.calories)")
+                        .font(.subheadline)
+                }
             }
-            if !workout.calories.isEmpty {
-                Text("Est Cal: \(workout.calories)")
-                    .font(.subheadline)
-            }
+            .frame(maxWidth: .infinity, minHeight: 150)
+            .background(Color.gray.opacity(0.1))
+            .cornerRadius(12)
         }
-        .frame(maxWidth: .infinity, minHeight: 150)
-        .background(Color.gray.opacity(0.1))
-        .cornerRadius(12)
+        .buttonStyle(PlainButtonStyle())
     }
 }
+
 
 #Preview {
     BrowseWorkoutsView()

@@ -7,17 +7,21 @@
 
 import SwiftUI
 
-struct HomeView: View {
-    @StateObject private var authManager = AuthManager.shared
+struct HomePageView: View {
+    @Binding var isLoggedIn: Bool
+    @State private var selectedTab: FooterTabBar.Tab = .home
     let calendar = Calendar.current
     @State private var days: [Day] = []
     @State private var showingAddGoalForm = false
     @State private var showingAddWorkoutForm = false
     @State private var showCamera = false
     @State private var capturedImage: UIImage?
+    @State private var showBarcodeScanner = false
+    @State private var scannedBarcode: String?
     
 //    hardcoded data used to mimic returned request ============
     
+    let user: User
     @State private var goals: [Goal] = Goal.exampleGoals
     @State private var fitnessRecords: [FitnessRecord] = FitnessRecord.exampleRecords                                                                           
     @State private var foods: [FoodEntry] = FoodEntry.exampleFoodEntries
@@ -25,6 +29,22 @@ struct HomeView: View {
 //  ============================================================
     
     var body: some View {
+        VStack(spacing: 0) {
+            // Show different views based on selected tab
+            if selectedTab == .browse {
+                BrowseWorkoutsView()
+            } else {
+                // Home view content
+                homeContent
+            }
+            
+            // Footer Tabs (always visible)
+            FooterTabBar(selectedTab: $selectedTab)
+        }
+        .edgesIgnoringSafeArea(.bottom)
+    }
+    
+    var homeContent: some View {
         VStack {
             // Header with streak
             HStack {
@@ -36,7 +56,7 @@ struct HomeView: View {
                         .foregroundColor(.orange)
                         .font(.system(size: 18, weight: .bold))
                     
-                    Text("\(authManager.currentUser?.loginStreak ?? 0)") // dynamic streak number
+                    Text("\(user.loginStreak ?? 0)") // streak number from user parameter
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.black)
                 }
@@ -153,34 +173,42 @@ struct HomeView: View {
                                 .cornerRadius(10)
                                 .padding()
                         }
+                        
+                        if let barcode = scannedBarcode {
+                            VStack {
+                                Text("Scanned Barcode:")
+                                    .font(.headline)
+                                    .foregroundColor(.blue)
+                                Text(barcode)
+                                    .font(.system(.body, design: .monospaced))
+                                    .padding()
+                                    .background(Color.gray.opacity(0.1))
+                                    .cornerRadius(8)
+                                    .padding()
+                            }
+                        }
 
                         Button(action: {
-                            showCamera = true
+                            showBarcodeScanner = true
                         }) {
-    //                            Label("Scan Barcode", systemImage: "camera.fill")                                                                             
                             Image(systemName: "barcode")
                                 .font(.system(size: 24, weight: .bold))
                                 .padding()
-    //                                .frame(maxWidth: .infinity)
                                 .background(Color.blue)
                                 .foregroundColor(.white)
-    //                                .cornerRadius(12)
                                 .clipShape(Circle())
                                 .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 3)                                                                      
                         }
-                        .sheet(isPresented: $showCamera) {
-                            CameraPicker(selectedImage: $capturedImage)
+                        .sheet(isPresented: $showBarcodeScanner) {
+                            BarcodeScannerView(scannedCode: $scannedBarcode)
                         }
                     }
                 }
             }
-            
-            // Footer Tabs
-            FooterTabBar()
         }
     }
 }
 
 #Preview {
-    HomeView()
+    HomePageView(isLoggedIn: .constant(true), user: .exampleUser)
 }

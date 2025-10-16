@@ -27,11 +27,7 @@ struct AdaptFitnessApp: App {
 
     var body: some Scene {
         WindowGroup {
-            if authManager.isAuthenticated {
-                ContentView()
-            } else {
-                LoginView()
-            }
+            HomePageView(isLoggedIn: .constant(true), user: .exampleUser)
         }
         .modelContainer(sharedModelContainer)
     }
