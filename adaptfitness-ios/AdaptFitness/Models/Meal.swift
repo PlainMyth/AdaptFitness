@@ -12,14 +12,16 @@ struct Meal: Codable, Identifiable {
     let name: String
     let description: String?
     let mealTime: String
-    let calories: Double
-    let protein: Double?
-    let carbs: Double?
-    let fat: Double?
-    let fiber: Double?
-    let sugar: Double?
-    let sodium: Double?
+    let totalCalories: Double
+    let totalProtein: Double?
+    let totalCarbs: Double?
+    let totalFat: Double?
+    let totalFiber: Double?
+    let totalSugar: Double?
+    let totalSodium: Double?
     let mealType: MealType?
+    let servingSize: Double?
+    let servingUnit: String?
     let userId: String
     let createdAt: String
     let updatedAt: String
@@ -57,14 +59,16 @@ struct CreateMealRequest: Codable {
     let name: String
     let description: String?
     let mealTime: String
-    let calories: Double
-    let protein: Double?
-    let carbs: Double?
-    let fat: Double?
-    let fiber: Double?
-    let sugar: Double?
-    let sodium: Double?
+    let totalCalories: Double
+    let totalProtein: Double?
+    let totalCarbs: Double?
+    let totalFat: Double?
+    let totalFiber: Double?
+    let totalSugar: Double?
+    let totalSodium: Double?
     let mealType: MealType?
+    let servingSize: Double?
+    let servingUnit: String?
 }
 
 struct MealStreak: Codable {

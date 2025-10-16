@@ -59,7 +59,7 @@ class MealViewModel: ObservableObject {
             let formatter = ISO8601DateFormatter()
             guard let mealDate = formatter.date(from: meal.mealTime) else { return false }
             return calendar.isDate(mealDate, inSameDayAs: today)
-        }.reduce(0) { $0 + $1.calories }
+        }.reduce(0) { $0 + $1.totalCalories }
     }
     
     var totalCaloriesThisWeek: Double {
@@ -71,7 +71,7 @@ class MealViewModel: ObservableObject {
             let formatter = ISO8601DateFormatter()
             guard let mealDate = formatter.date(from: meal.mealTime) else { return false }
             return mealDate >= startOfWeek
-        }.reduce(0) { $0 + $1.calories }
+        }.reduce(0) { $0 + $1.totalCalories }
     }
     
     var totalProteinToday: Double {
@@ -82,7 +82,7 @@ class MealViewModel: ObservableObject {
             let formatter = ISO8601DateFormatter()
             guard let mealDate = formatter.date(from: meal.mealTime) else { return false }
             return calendar.isDate(mealDate, inSameDayAs: today)
-        }.compactMap { $0.protein }.reduce(0, +)
+        }.compactMap { $0.totalProtein }.reduce(0, +)
     }
     
     var mealsByType: [MealType: [Meal]] {

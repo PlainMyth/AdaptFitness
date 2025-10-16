@@ -143,14 +143,16 @@ struct AddMealView: View {
             name: name,
             description: description.isEmpty ? nil : description,
             mealTime: formatter.string(from: mealTime),
-            calories: Double(calories) ?? 0,
-            protein: protein.isEmpty ? nil : Double(protein),
-            carbs: carbs.isEmpty ? nil : Double(carbs),
-            fat: fat.isEmpty ? nil : Double(fat),
-            fiber: fiber.isEmpty ? nil : Double(fiber),
-            sugar: sugar.isEmpty ? nil : Double(sugar),
-            sodium: sodium.isEmpty ? nil : Double(sodium),
-            mealType: selectedMealType
+            totalCalories: Double(calories) ?? 0,
+            totalProtein: protein.isEmpty ? nil : Double(protein),
+            totalCarbs: carbs.isEmpty ? nil : Double(carbs),
+            totalFat: fat.isEmpty ? nil : Double(fat),
+            totalFiber: fiber.isEmpty ? nil : Double(fiber),
+            totalSugar: sugar.isEmpty ? nil : Double(sugar),
+            totalSodium: sodium.isEmpty ? nil : Double(sodium),
+            mealType: selectedMealType,
+            servingSize: nil,
+            servingUnit: nil
         )
         
         Task {

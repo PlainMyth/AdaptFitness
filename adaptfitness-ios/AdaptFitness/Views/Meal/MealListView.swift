@@ -107,11 +107,11 @@ struct MealRowView: View {
                 Spacer()
                 
                 VStack(alignment: .trailing, spacing: 2) {
-                    Text("\(Int(meal.calories)) cal")
+                    Text("\(Int(meal.totalCalories)) cal")
                         .font(.caption)
                         .fontWeight(.medium)
                     
-                    if let protein = meal.protein {
+                    if let protein = meal.totalProtein {
                         Text("\(Int(protein))g protein")
                             .font(.caption2)
                             .foregroundColor(.secondary)
