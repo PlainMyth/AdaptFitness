@@ -116,6 +116,7 @@ struct LoginView: View {
 struct LoginView_Previews: PreviewProvider {
     static var previews: some View {
         LoginView()
+            .environmentObject(AuthManager())
             .previewDevice("iPhone 17") // Optional: choose simulator device
             .preferredColorScheme(.light)   // Optional: light/dark mode preview
     }
