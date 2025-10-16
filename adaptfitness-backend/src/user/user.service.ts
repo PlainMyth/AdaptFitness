@@ -55,12 +55,44 @@ export class UserService {
     return this.userRepository.save(user);
   }
 
-  async findByEmail(email: string): Promise<User | undefined> {
+  /**
+   * FOR AUTHENTICATION ONLY - includes password hash
+   * This method is used during login to verify credentials.
+   * NEVER use this method for general user queries.
+   */
+  async findByEmailForAuth(email: string): Promise<User | undefined> {
     return this.userRepository.findOne({ where: { email } });
   }
 
-  async findById(id: string): Promise<User | undefined> {
+  /**
+   * FOR GENERAL USE - excludes password hash
+   * Use this method for all non-authentication queries.
+   */
+  async findByEmail(email: string): Promise<User | undefined> {
+    return this.userRepository.findOne({ 
+      where: { email },
+      select: ['id', 'email', 'firstName', 'lastName', 'dateOfBirth', 'height', 'weight', 'gender', 'activityLevel', 'activityLevelMultiplier', 'isActive', 'createdAt', 'updatedAt']
+    });
+  }
+
+  /**
+   * FOR AUTHENTICATION ONLY - includes password hash
+   * This method is used during JWT validation.
+   * NEVER use this method for general user queries.
+   */
+  async findByIdForAuth(id: string): Promise<User | undefined> {
     return this.userRepository.findOne({ where: { id } });
+  }
+
+  /**
+   * FOR GENERAL USE - excludes password hash
+   * Use this method for all non-authentication queries.
+   */
+  async findById(id: string): Promise<User | undefined> {
+    return this.userRepository.findOne({ 
+      where: { id },
+      select: ['id', 'email', 'firstName', 'lastName', 'dateOfBirth', 'height', 'weight', 'gender', 'activityLevel', 'activityLevelMultiplier', 'isActive', 'createdAt', 'updatedAt']
+    });
   }
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {

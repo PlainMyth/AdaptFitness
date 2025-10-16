@@ -1,17 +1,23 @@
-/**
- * Workout Service
- *
- * This service handles all workout-related business logic including CRUD operations, workout calculations, and data validation.
- *
- * Key responsibilities:
-- Handle workout business logic\n * - Perform workout calculations and validations\n * - Manage workout data persistence\n * - Provide workout-related utilities
- */
-
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Workout } from './workout.entity';
+import { CreateWorkoutDto } from './dto/create-workout.dto';
+import { UpdateWorkoutDto } from './dto/update-workout.dto';
 
+/**
+ * Workout Service
+ *
+ * This service handles all workout-related business logic and database operations.
+ * It provides CRUD operations for workouts and manages workout data validation.
+ *
+ * Key responsibilities:
+ * - Create, read, update, and delete workouts
+ * - Validate workout data and handle conflicts
+ * - Convert workout entities to response DTOs
+ * - Manage workout streak calculations
+ * - Handle timezone-aware date calculations
+ */
 @Injectable()
 export class WorkoutService {
   constructor(
@@ -19,139 +25,201 @@ export class WorkoutService {
     private workoutRepository: Repository<Workout>,
   ) {}
 
-  async create(workoutData: Partial<Workout>): Promise<Workout> {
-    const workout = this.workoutRepository.create(workoutData);
-    return this.workoutRepository.save(workout);
-  }
-
-  async findAll(userId: string): Promise<Workout[]> {
-    return this.workoutRepository.find({
-      where: { userId },
-      order: { startTime: 'DESC' }
-    });
-  }
-
-  async findOne(id: string, userId: string): Promise<Workout> {
-    const workout = await this.workoutRepository.findOne({
-      where: { id, userId }
-    });
-    
-    if (!workout) {
-      throw new NotFoundException('Workout not found');
+  /**
+   * Validate create workout DTO
+   * @param dto - The DTO to validate
+   * @throws BadRequestException if validation fails
+   */
+  private validateCreateWorkoutDto(dto: CreateWorkoutDto): void {
+    if (!dto.name || dto.name.trim().length === 0) {
+      throw new BadRequestException('Workout name is required.');
     }
-    
+    if (!dto.startTime) {
+      throw new BadRequestException('Workout start time is required.');
+    }
+    if (dto.totalCaloriesBurned !== undefined && dto.totalCaloriesBurned < 0) {
+      throw new BadRequestException('Total calories burned cannot be negative.');
+    }
+    if (dto.totalDuration !== undefined && dto.totalDuration < 0) {
+      throw new BadRequestException('Total duration cannot be negative.');
+    }
+    if (!dto.userId || dto.userId.trim().length === 0) {
+      throw new BadRequestException('User ID is required for workout creation.');
+    }
+  }
+
+  /**
+   * Validate update workout DTO
+   * @param dto - The DTO to validate
+   * @throws BadRequestException if validation fails
+   */
+  private validateUpdateWorkoutDto(dto: UpdateWorkoutDto): void {
+    if (dto.name !== undefined && dto.name.trim().length === 0) {
+      throw new BadRequestException('Workout name cannot be empty.');
+    }
+    if (dto.totalCaloriesBurned !== undefined && dto.totalCaloriesBurned < 0) {
+      throw new BadRequestException('Total calories burned cannot be negative.');
+    }
+    if (dto.totalDuration !== undefined && dto.totalDuration < 0) {
+      throw new BadRequestException('Total duration cannot be negative.');
+    }
+  }
+
+  /**
+   * Create a new workout
+   * @param createWorkoutDto - The workout data to create
+   * @returns The created workout
+   */
+  async create(createWorkoutDto: CreateWorkoutDto): Promise<Workout> {
+    this.validateCreateWorkoutDto(createWorkoutDto);
+    const workout = this.workoutRepository.create(createWorkoutDto);
+    return await this.workoutRepository.save(workout);
+  }
+
+  /**
+   * Find all workouts for a specific user
+   * @param userId - The user ID to find workouts for
+   * @returns Array of workouts for the user
+   */
+  async findAll(userId: string): Promise<Workout[]> {
+    return await this.workoutRepository.find({
+      where: { user: { id: userId } },
+      order: { startTime: 'DESC' },
+    });
+  }
+
+  /**
+   * Find a specific workout by ID
+   * @param id - The workout ID
+   * @returns The workout if found
+   * @throws NotFoundException if workout not found
+   */
+  async findOne(id: string): Promise<Workout> {
+    const workout = await this.workoutRepository.findOne({
+      where: { id },
+      relations: ['user'],
+    });
+
+    if (!workout) {
+      throw new NotFoundException(`Workout with ID ${id} not found`);
+    }
+
     return workout;
   }
 
-  async update(id: string, userId: string, updateData: Partial<Workout>): Promise<Workout> {
-    const workout = await this.findOne(id, userId);
-    Object.assign(workout, updateData);
-    return this.workoutRepository.save(workout);
-  }
-
-  async remove(id: string, userId: string): Promise<void> {
-    const result = await this.workoutRepository.delete({ id, userId });
-    if (result.affected === 0) {
-      throw new NotFoundException('Workout not found');
-    }
+  /**
+   * Update a workout
+   * @param id - The workout ID to update
+   * @param updateWorkoutDto - The updated workout data
+   * @returns The updated workout
+   * @throws NotFoundException if workout not found
+   */
+  async update(id: string, updateWorkoutDto: UpdateWorkoutDto): Promise<Workout> {
+    this.validateUpdateWorkoutDto(updateWorkoutDto);
+    const workout = await this.findOne(id);
+    
+    Object.assign(workout, updateWorkoutDto);
+    return await this.workoutRepository.save(workout);
   }
 
   /**
-   * Compute the user's current daily workout streak based on calendar days.
-   * A day counts if the user has at least one workout with a startTime on that day (in UTC).
-   * The streak increments for each consecutive prior day with a workout; it resets when a gap is found.
+   * Remove a workout
+   * @param id - The workout ID to remove
+   * @throws NotFoundException if workout not found
    */
-  async getCurrentStreak(userId: string): Promise<{ streak: number; lastWorkoutDate?: string }> {
-    return this.getCurrentStreakInTimeZone(userId);
+  async remove(id: string): Promise<void> {
+    const workout = await this.findOne(id);
+    await this.workoutRepository.remove(workout);
   }
 
   /**
-   * Same as getCurrentStreak but allows specifying user's IANA time zone
-   * (e.g., "America/Los_Angeles"). Falls back to UTC on invalid input.
+   * Get current workout streak for a user in a specific timezone
+   * @param userId - The user ID
+   * @param timeZone - The timezone to calculate streak in (optional, defaults to UTC)
+   * @returns Object containing streak count and last workout date
    */
-  async getCurrentStreakInTimeZone(
-    userId: string,
-    timeZone?: string,
-  ): Promise<{ streak: number; lastWorkoutDate?: string }> {
-    const tz = this.validateTimeZone(timeZone);
-
-    // Fetch only the fields we need, newest first
+  async getCurrentStreakInTimeZone(userId: string, timeZone?: string): Promise<{ streak: number; lastWorkoutDate: string | null }> {
     const workouts = await this.workoutRepository.find({
-      where: { userId },
-      select: ['startTime'],
+      where: { user: { id: userId } },
       order: { startTime: 'DESC' },
     });
 
-    if (!workouts.length) {
-      return { streak: 0 };
+    if (workouts.length === 0) {
+      return { streak: 0, lastWorkoutDate: null };
     }
 
-    // Build a set of ISO dates (YYYY-MM-DD) in the user's time zone
-    const dateSet = new Set<string>();
-    for (const w of workouts) {
-      if (!w.startTime) continue;
-      dateSet.add(this.getDateKeyInTimeZone(w.startTime, tz));
-    }
-
-    if (dateSet.size === 0) {
-      return { streak: 0 };
-    }
-
-    const todayKey = this.getKeyForDaysAgo(0, tz);
-    const yKey = this.getKeyForDaysAgo(1, tz);
-
-    // Determine starting point: if worked out today, start from today; else if yesterday, start from yesterday; else streak is 0
-    let daysAgo = 0;
+    const timeZoneToUse = timeZone || 'UTC';
+    const todayKey = this.getDateKeyInTimeZone(new Date(), timeZoneToUse);
     let streak = 0;
+    let currentDateKey = todayKey;
 
-    if (dateSet.has(todayKey)) {
-      streak = 1; // today counts as 1
-    } else if (dateSet.has(yKey)) {
-      daysAgo = 1;
-      streak = 1; // yesterday counts as 1
-    } else {
-      return { streak: 0 };
+    // Check if there's a workout today
+    const hasWorkoutToday = workouts.some(workout => 
+      workout.startTime && this.getDateKeyInTimeZone(workout.startTime, timeZoneToUse) === todayKey
+    );
+
+    if (!hasWorkoutToday) {
+      // If no workout today, start checking from yesterday
+      currentDateKey = this.getKeyForDaysAgo(1, timeZoneToUse);
     }
 
-    // Walk backwards day by day while consecutive dates exist .
-    while (true) {
-      const nextKey = this.getKeyForDaysAgo(daysAgo + 1, tz);
-      if (dateSet.has(nextKey)) {
-        streak += 1;
-        daysAgo += 1;
+    // Count consecutive days with workouts
+    for (let daysAgo = 0; daysAgo < 365; daysAgo++) {
+      const dateKey = this.getKeyForDaysAgo(daysAgo, timeZoneToUse);
+      const hasWorkoutOnDate = workouts.some(workout => 
+        workout.startTime && this.getDateKeyInTimeZone(workout.startTime, timeZoneToUse) === dateKey
+      );
+
+      if (hasWorkoutOnDate) {
+        streak++;
       } else {
         break;
       }
     }
 
-    const lastWorkoutDate = [...dateSet].sort().pop();
+    // Find the most recent workout date
+    const lastWorkout = workouts.find(workout => workout.startTime);
+    const lastWorkoutDate = lastWorkout ? 
+      this.getDateKeyInTimeZone(lastWorkout.startTime, timeZoneToUse) : null;
+
     return { streak, lastWorkoutDate };
   }
 
-  private validateTimeZone(tz?: string): string {
-    if (!tz) return 'UTC';
+  /**
+   * Get date key in a specific timezone
+   * @param date - The date to convert
+   * @param timeZone - The target timezone
+   * @returns Date string in YYYY-MM-DD format
+   */
+  private getDateKeyInTimeZone(date: Date, timeZone: string): string {
     try {
-      new Intl.DateTimeFormat('en-US', { timeZone: tz }).format(new Date());
-      return tz;
-    } catch {
-      return 'UTC';
+      const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: timeZone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+      
+      const parts = formatter.formatToParts(date);
+      const year = parts.find(p => p.type === 'year')?.value ?? '2025';
+      const month = parts.find(p => p.type === 'month')?.value ?? '01';
+      const day = parts.find(p => p.type === 'day')?.value ?? '01';
+      return `${year}-${month}-${day}`;
+    } catch (error) {
+      // Fallback to UTC if timezone is invalid
+      const year = date.getUTCFullYear();
+      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(date.getUTCDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
     }
   }
 
-  private getDateKeyInTimeZone(date: Date, timeZone: string): string {
-    const fmt = new Intl.DateTimeFormat('en-CA', {
-      timeZone,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    });
-    const parts = fmt.formatToParts(date);
-    const year = parts.find(p => p.type === 'year')?.value ?? '0000';
-    const month = parts.find(p => p.type === 'month')?.value ?? '01';
-    const day = parts.find(p => p.type === 'day')?.value ?? '01';
-    return `${year}-${month}-${day}`;
-  }
-
+  /**
+   * Get date key for a specific number of days ago
+   * @param daysAgo - Number of days to go back
+   * @param timeZone - The timezone to calculate in
+   * @returns Date string in YYYY-MM-DD format
+   */
   private getKeyForDaysAgo(daysAgo: number, timeZone: string): string {
     // Determine the user's current local date first
     const now = new Date();

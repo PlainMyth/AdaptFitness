@@ -16,6 +16,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { validateEnvironment } from './config/env.validation';
 
 /**
  * Bootstrap Function
@@ -31,6 +32,9 @@ import { AppModule } from './app.module';
  * 5. Displays startup information
  */
 async function bootstrap() {
+  // Validate environment variables before starting the application
+  validateEnvironment();
+  
   // Create the NestJS application instance using our main AppModule
   const app = await NestFactory.create(AppModule);
   
@@ -44,7 +48,8 @@ async function bootstrap() {
   });
   
   // Set up global validation pipe for automatic data validation
-  // This ensures all incoming data is validated according to DTO rules
+  // Note: We use manual service-level validation instead of class-validator decorators
+  // This provides more control and better error handling
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,        // Strip out properties not defined in DTOs
     forbidNonWhitelisted: true, // Throw error if unknown properties are sent

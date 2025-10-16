@@ -1,17 +1,23 @@
-/**
- * Meal Service
- *
- * This service handles all meal-related business logic including CRUD operations, nutritional calculations, and data validation.
- *
- * Key responsibilities:
-- Handle meal business logic\n * - Perform nutritional calculations\n * - Manage meal data persistence\n * - Provide nutrition-related utilities
- */
-
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Meal } from './meal.entity';
+import { CreateMealDto } from './dto/create-meal.dto';
+import { UpdateMealDto } from './dto/update-meal.dto';
 
+/**
+ * Meal Service
+ *
+ * This service handles all meal-related business logic and database operations.
+ * It provides CRUD operations for meals and manages meal data validation.
+ *
+ * Key responsibilities:
+ * - Create, read, update, and delete meals
+ * - Validate meal data and handle conflicts
+ * - Convert meal entities to response DTOs
+ * - Manage meal streak calculations
+ * - Handle timezone-aware date calculations
+ */
 @Injectable()
 export class MealService {
   constructor(
@@ -19,139 +25,224 @@ export class MealService {
     private mealRepository: Repository<Meal>,
   ) {}
 
-  async create(mealData: Partial<Meal>): Promise<Meal> {
-    const meal = this.mealRepository.create(mealData);
-    return this.mealRepository.save(meal);
+  /**
+   * Create a new meal
+   * @param createMealDto - The meal data to create
+   * @returns The created meal
+   */
+  async create(createMealDto: CreateMealDto): Promise<Meal> {
+    // Validate input data
+    this.validateCreateMealDto(createMealDto);
+    
+    const meal = this.mealRepository.create(createMealDto);
+    return await this.mealRepository.save(meal);
   }
 
+  /**
+   * Find all meals for a specific user
+   * @param userId - The user ID to find meals for
+   * @returns Array of meals for the user
+   */
   async findAll(userId: string): Promise<Meal[]> {
-    return this.mealRepository.find({
-      where: { userId },
-      order: { mealTime: 'DESC' }
+    return await this.mealRepository.find({
+      where: { user: { id: userId } },
+      order: { mealTime: 'DESC' },
     });
   }
 
-  async findOne(id: string, userId: string): Promise<Meal> {
+  /**
+   * Find a specific meal by ID
+   * @param id - The meal ID
+   * @returns The meal if found
+   * @throws NotFoundException if meal not found
+   */
+  async findOne(id: string): Promise<Meal> {
     const meal = await this.mealRepository.findOne({
-      where: { id, userId }
+      where: { id },
+      relations: ['user'],
     });
-    
+
     if (!meal) {
-      throw new NotFoundException('Meal not found');
+      throw new NotFoundException(`Meal with ID ${id} not found`);
     }
-    
+
     return meal;
   }
 
-  async update(id: string, userId: string, updateData: Partial<Meal>): Promise<Meal> {
-    const meal = await this.findOne(id, userId);
-    Object.assign(meal, updateData);
-    return this.mealRepository.save(meal);
-  }
-
-  async remove(id: string, userId: string): Promise<void> {
-    const result = await this.mealRepository.delete({ id, userId });
-    if (result.affected === 0) {
-      throw new NotFoundException('Meal not found');
-    }
+  /**
+   * Update a meal
+   * @param id - The meal ID to update
+   * @param updateMealDto - The updated meal data
+   * @returns The updated meal
+   * @throws NotFoundException if meal not found
+   */
+  async update(id: string, updateMealDto: UpdateMealDto): Promise<Meal> {
+    // Validate input data
+    this.validateUpdateMealDto(updateMealDto);
+    
+    const meal = await this.findOne(id);
+    
+    Object.assign(meal, updateMealDto);
+    return await this.mealRepository.save(meal);
   }
 
   /**
-   * Compute the user's current daily meal streak based on calendar days.
-   * A day counts if the user has at least one meal with a mealTime on that day (in UTC).
-   * The streak increments for each consecutive prior day with a meal; it resets when a gap is found.
+   * Remove a meal
+   * @param id - The meal ID to remove
+   * @throws NotFoundException if meal not found
    */
-  async getCurrentStreak(userId: string): Promise<{ streak: number; lastMealDate?: string }> {
-    return this.getCurrentStreakInTimeZone(userId);
+  async remove(id: string): Promise<void> {
+    const meal = await this.findOne(id);
+    await this.mealRepository.remove(meal);
   }
 
   /**
-   * Same as getCurrentStreak but allows specifying user's IANA time zone
-   * (e.g., "America/Los_Angeles"). Falls back to UTC on invalid input.
+   * Get current meal streak for a user in a specific timezone
+   * @param userId - The user ID
+   * @param timeZone - The timezone to calculate streak in (optional, defaults to UTC)
+   * @returns Object containing streak count and last meal date
    */
-  async getCurrentStreakInTimeZone(
-    userId: string,
-    timeZone?: string,
-  ): Promise<{ streak: number; lastMealDate?: string }> {
-    const tz = this.validateTimeZone(timeZone);
-
-    // Fetch only the fields we need, newest first
+  async getCurrentStreakInTimeZone(userId: string, timeZone?: string): Promise<{ streak: number; lastMealDate: string | null }> {
     const meals = await this.mealRepository.find({
-      where: { userId },
-      select: ['mealTime'],
+      where: { user: { id: userId } },
       order: { mealTime: 'DESC' },
     });
 
-    if (!meals.length) {
-      return { streak: 0 };
+    if (meals.length === 0) {
+      return { streak: 0, lastMealDate: null };
     }
 
-    // Build a set of ISO dates (YYYY-MM-DD) in the user's time zone
-    const dateSet = new Set<string>();
-    for (const m of meals) {
-      if (!m.mealTime) continue;
-      dateSet.add(this.getDateKeyInTimeZone(m.mealTime, tz));
-    }
-
-    if (dateSet.size === 0) {
-      return { streak: 0 };
-    }
-
-    const todayKey = this.getKeyForDaysAgo(0, tz);
-    const yKey = this.getKeyForDaysAgo(1, tz);
-
-    // Determine starting point: if ate today, start from today; else if yesterday, start from yesterday; else streak is 0
-    let daysAgo = 0;
+    const timeZoneToUse = timeZone || 'UTC';
+    const todayKey = this.getDateKeyInTimeZone(new Date(), timeZoneToUse);
     let streak = 0;
+    let currentDateKey = todayKey;
 
-    if (dateSet.has(todayKey)) {
-      streak = 1; // today counts as 1
-    } else if (dateSet.has(yKey)) {
-      daysAgo = 1;
-      streak = 1; // yesterday counts as 1
-    } else {
-      return { streak: 0 };
+    // Check if there's a meal today
+    const hasMealToday = meals.some(meal => 
+      meal.mealTime && this.getDateKeyInTimeZone(meal.mealTime, timeZoneToUse) === todayKey
+    );
+
+    if (!hasMealToday) {
+      // If no meal today, start checking from yesterday
+      currentDateKey = this.getKeyForDaysAgo(1, timeZoneToUse);
     }
 
-    // Walk backwards day by day while consecutive dates exist
-    while (true) {
-      const nextKey = this.getKeyForDaysAgo(daysAgo + 1, tz);
-      if (dateSet.has(nextKey)) {
-        streak += 1;
-        daysAgo += 1;
+    // Count consecutive days with meals
+    for (let daysAgo = 0; daysAgo < 365; daysAgo++) {
+      const dateKey = this.getKeyForDaysAgo(daysAgo, timeZoneToUse);
+      const hasMealOnDate = meals.some(meal => 
+        meal.mealTime && this.getDateKeyInTimeZone(meal.mealTime, timeZoneToUse) === dateKey
+      );
+
+      if (hasMealOnDate) {
+        streak++;
       } else {
         break;
       }
     }
 
-    const lastMealDate = [...dateSet].sort().pop();
+    // Find the most recent meal date
+    const lastMeal = meals.find(meal => meal.mealTime);
+    const lastMealDate = lastMeal ? 
+      this.getDateKeyInTimeZone(lastMeal.mealTime, timeZoneToUse) : null;
+
     return { streak, lastMealDate };
   }
 
-  private validateTimeZone(tz?: string): string {
-    if (!tz) return 'UTC';
-    try {
-      new Intl.DateTimeFormat('en-US', { timeZone: tz }).format(new Date());
-      return tz;
-    } catch {
-      return 'UTC';
+  /**
+   * Validate CreateMealDto data
+   * @param dto - The DTO to validate
+   * @throws BadRequestException if validation fails
+   */
+  private validateCreateMealDto(dto: CreateMealDto): void {
+    if (!dto.name || dto.name.trim().length === 0) {
+      throw new BadRequestException('Meal name is required and cannot be empty');
+    }
+    
+    if (!dto.description || dto.description.trim().length === 0) {
+      throw new BadRequestException('Meal description is required and cannot be empty');
+    }
+    
+    if (!dto.mealTime) {
+      throw new BadRequestException('Meal time is required');
+    }
+    
+    if (!dto.userId || dto.userId.trim().length === 0) {
+      throw new BadRequestException('User ID is required');
+    }
+    
+    if (dto.totalCalories !== undefined && dto.totalCalories < 0) {
+      throw new BadRequestException('Total calories cannot be negative');
+    }
+    
+    // Validate date format
+    const mealTime = new Date(dto.mealTime);
+    if (isNaN(mealTime.getTime())) {
+      throw new BadRequestException('Invalid meal time format');
     }
   }
 
-  private getDateKeyInTimeZone(date: Date, timeZone: string): string {
-    const fmt = new Intl.DateTimeFormat('en-CA', {
-      timeZone,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    });
-    const parts = fmt.formatToParts(date);
-    const year = parts.find(p => p.type === 'year')?.value ?? '0000';
-    const month = parts.find(p => p.type === 'month')?.value ?? '01';
-    const day = parts.find(p => p.type === 'day')?.value ?? '01';
-    return `${year}-${month}-${day}`;
+  /**
+   * Validate UpdateMealDto data
+   * @param dto - The DTO to validate
+   * @throws BadRequestException if validation fails
+   */
+  private validateUpdateMealDto(dto: UpdateMealDto): void {
+    if (dto.name !== undefined && (!dto.name || dto.name.trim().length === 0)) {
+      throw new BadRequestException('Meal name cannot be empty');
+    }
+    
+    if (dto.description !== undefined && (!dto.description || dto.description.trim().length === 0)) {
+      throw new BadRequestException('Meal description cannot be empty');
+    }
+    
+    if (dto.mealTime !== undefined) {
+      const mealTime = new Date(dto.mealTime);
+      if (isNaN(mealTime.getTime())) {
+        throw new BadRequestException('Invalid meal time format');
+      }
+    }
+    
+    if (dto.totalCalories !== undefined && dto.totalCalories < 0) {
+      throw new BadRequestException('Total calories cannot be negative');
+    }
   }
 
+  /**
+   * Get date key in a specific timezone
+   * @param date - The date to convert
+   * @param timeZone - The target timezone
+   * @returns Date string in YYYY-MM-DD format
+   */
+  private getDateKeyInTimeZone(date: Date, timeZone: string): string {
+    try {
+      const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: timeZone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+      
+      const parts = formatter.formatToParts(date);
+      const year = parts.find(p => p.type === 'year')?.value ?? '2025';
+      const month = parts.find(p => p.type === 'month')?.value ?? '01';
+      const day = parts.find(p => p.type === 'day')?.value ?? '01';
+      return `${year}-${month}-${day}`;
+    } catch (error) {
+      // Fallback to UTC if timezone is invalid
+      const year = date.getUTCFullYear();
+      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(date.getUTCDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+  }
+
+  /**
+   * Get date key for a specific number of days ago
+   * @param daysAgo - Number of days to go back
+   * @param timeZone - The timezone to calculate in
+   * @returns Date string in YYYY-MM-DD format
+   */
   private getKeyForDaysAgo(daysAgo: number, timeZone: string): string {
     // Determine the user's current local date first
     const now = new Date();

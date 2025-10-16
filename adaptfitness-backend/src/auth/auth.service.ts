@@ -12,10 +12,11 @@
  * - User authentication state management
  */
 
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../user/user.service';
 import { RegisterDto, LoginDto, AuthResponseDto, RegisterResponseDto } from './dto/auth.dto';
+import { PasswordValidator } from './validators/password.validator';
 import * as bcrypt from 'bcryptjs';
 
 // @Injectable decorator makes this class available for dependency injection
@@ -43,8 +44,8 @@ export class AuthService {
    * @returns User data without password, or null if invalid
    */
   async validateUser(email: string, password: string): Promise<any> {
-    // Find user by email address
-    const user = await this.userService.findByEmail(email);
+    // Find user by email address - USE ForAuth method to get password hash
+    const user = await this.userService.findByEmailForAuth(email);
 
     // Check if user exists and password matches
     if (user && await bcrypt.compare(password, user.password)) {
@@ -77,6 +78,17 @@ export class AuthService {
 
   async register(registerDto: RegisterDto): Promise<RegisterResponseDto> {
     try {
+      // Validate password strength before proceeding
+      const passwordValidation = PasswordValidator.validate(registerDto.password);
+      if (!passwordValidation.valid) {
+        throw new BadRequestException({
+          message: 'Password does not meet security requirements',
+          errors: passwordValidation.errors,
+          requirements: PasswordValidator.getRequirements(),
+        });
+      }
+
+      // Hash password after validation
       const hashedPassword = await bcrypt.hash(registerDto.password, 10);
       const user = await this.userService.create({
         ...registerDto,
@@ -94,7 +106,7 @@ export class AuthService {
         }
       };
     } catch (error) {
-      if (error instanceof ConflictException) {
+      if (error instanceof ConflictException || error instanceof BadRequestException) {
         throw error;
       }
       throw new Error('Failed to create user');
@@ -102,6 +114,7 @@ export class AuthService {
   }
 
   async validateToken(userId: string): Promise<any> {
+    // Use regular findById since we don't need password for token validation
     const user = await this.userService.findById(userId);
     if (!user || !user.isActive) {
       throw new UnauthorizedException('User not found or inactive');

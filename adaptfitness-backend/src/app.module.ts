@@ -15,9 +15,11 @@
 
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { WorkoutModule } from './workout/workout.module';
@@ -27,6 +29,7 @@ import { GoalCalendarModule } from './goal-calendar/goal-calendar.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { JwtStrategy } from './auth/strategies/jwt.strategy';
+import { throttlerConfig } from './config/throttler.config';
 
 @Module({
   imports: [
@@ -37,16 +40,20 @@ import { JwtStrategy } from './auth/strategies/jwt.strategy';
     }),
     
     // Database configuration using TypeORM with PostgreSQL
-    TypeOrmModule.forRoot({
-      type: 'postgres',      // Database type
-      host: process.env.DATABASE_HOST || 'localhost',                    // Database host
-      port: parseInt(process.env.DATABASE_PORT) || 5432,                 // Database port
-      username: process.env.DATABASE_USERNAME || 'postgres',             // Database username
-      password: process.env.DATABASE_PASSWORD || 'password',             // Database password
-      database: process.env.DATABASE_NAME || 'adaptfitness',             // Database name
-      entities: [__dirname + '/**/*.entity{.ts,.js}'],                   // Auto-load all entity files
-      synchronize: process.env.NODE_ENV !== 'production',                // Auto-sync schema in development
-      logging: process.env.NODE_ENV === 'development',                   // Enable SQL logging in development
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres' as const,
+        host: configService.get<string>('DATABASE_HOST') || 'localhost',
+        port: configService.get<number>('DATABASE_PORT') || 5432,
+        username: configService.get<string>('DATABASE_USERNAME') || 'postgres',
+        password: configService.get<string>('DATABASE_PASSWORD') || 'password',
+        database: configService.get<string>('DATABASE_NAME') || 'adaptfitness',
+        entities: [__dirname + '/**/*.entity{.ts,.js}'],
+        synchronize: process.env.NODE_ENV !== 'production',
+        logging: process.env.NODE_ENV === 'development',
+      }),
+      inject: [ConfigService],
     }),
     
     // Passport authentication module
@@ -54,13 +61,20 @@ import { JwtStrategy } from './auth/strategies/jwt.strategy';
       defaultStrategy: 'jwt'  // Use JWT as the default authentication strategy
     }),
     
-    // JWT token configuration
-    JwtModule.register({
-      secret: process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production-adaptfitness-2024',
-      signOptions: { 
-        expiresIn: process.env.JWT_EXPIRES_IN || '24h'  // Token expiration time
-      },
+    // JWT token configuration - using registerAsync for proper config loading
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET'),
+        signOptions: { 
+          expiresIn: configService.get<string>('JWT_EXPIRES_IN') || '24h'
+        },
+      }),
+      inject: [ConfigService],
     }),
+    
+    // Rate limiting module - prevents brute force attacks
+    ThrottlerModule.forRoot(throttlerConfig),
     
     // Feature modules
     AuthModule,              // Authentication and user management
@@ -75,7 +89,15 @@ import { JwtStrategy } from './auth/strategies/jwt.strategy';
   controllers: [AppController],
   
   // Root-level services and strategies
-  providers: [AppService, JwtStrategy],
+  providers: [
+    AppService, 
+    JwtStrategy,
+    // Apply rate limiting globally to all endpoints
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
   
   // Export JWT strategy for use in other modules
   exports: [JwtStrategy],
