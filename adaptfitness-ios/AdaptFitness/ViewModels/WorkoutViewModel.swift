@@ -2,88 +2,241 @@
 //  WorkoutViewModel.swift
 //  AdaptFitness
 //
-//  Created by AI Assistant
+//  Created by OzzieC8 on 10/16/25.
 //
 
 import Foundation
-import SwiftUI
+import Combine
 
+/// ViewModel for managing workout data and API interactions
 @MainActor
 class WorkoutViewModel: ObservableObject {
-    @Published var workouts: [Workout] = []
-    @Published var isLoading = false
-    @Published var error: String?
     
-    private let authManager = AuthManager()
+    // MARK: - Published Properties
+    
+    @Published var workouts: [WorkoutResponse] = []
+    @Published var currentStreak: Int = 0
+    @Published var isLoading = false
+    @Published var errorMessage: String?
+    @Published var showError = false
+    
+    // MARK: - Private Properties
+    
     private let apiService = APIService.shared
     
-    func loadWorkouts() {
-        guard let token = authManager.authToken else {
-            error = "Not authenticated"
-            return
-        }
-        
+    // MARK: - Public Methods
+    
+    /// Fetch all workouts for the current user
+    func fetchWorkouts() async {
         isLoading = true
-        error = nil
+        errorMessage = nil
         
-        Task {
-            do {
-                let fetchedWorkouts = try await apiService.getWorkouts(token: token)
-                workouts = fetchedWorkouts
-                isLoading = false
-            } catch {
-                self.error = error.localizedDescription
-                isLoading = false
-            }
+        do {
+            let response: [WorkoutResponse] = try await apiService.request(
+                endpoint: "/workouts",
+                method: .get,
+                requiresAuth: true
+            )
+            workouts = response.sorted { $0.startTime > $1.startTime }
+            isLoading = false
+        } catch let error as NetworkError {
+            handleError(error)
+        } catch {
+            handleError(.invalidResponse)
         }
     }
     
-    func addWorkout(_ workout: Workout) {
-        workouts.insert(workout, at: 0)
+    /// Fetch the current workout streak
+    func fetchCurrentStreak() async {
+        do {
+            let response: StreakResponse = try await apiService.request(
+                endpoint: "/workouts/streak/current",
+                method: .get,
+                requiresAuth: true
+            )
+            currentStreak = response.streak
+        } catch {
+            // Silently fail for streak - it's not critical
+            currentStreak = 0
+        }
     }
     
-    func deleteWorkouts(at offsets: IndexSet) {
-        // Note: In a real app, you'd also call the API to delete from the server
-        workouts.remove(atOffsets: offsets)
-    }
-    
-    func refreshWorkouts() {
-        loadWorkouts()
-    }
-    
-    var totalWorkoutsThisWeek: Int {
-        let calendar = Calendar.current
-        let now = Date()
-        let startOfWeek = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? now
+    /// Create a new workout
+    func createWorkout(
+        name: String,
+        description: String? = nil,
+        startTime: Date,
+        endTime: Date? = nil,
+        totalCaloriesBurned: Double? = nil,
+        totalDuration: Int? = nil,
+        notes: String? = nil
+    ) async throws {
+        isLoading = true
+        errorMessage = nil
         
-        return workouts.filter { workout in
-            let formatter = ISO8601DateFormatter()
-            guard let workoutDate = formatter.date(from: workout.startTime) else { return false }
-            return workoutDate >= startOfWeek
-        }.count
+        let request = CreateWorkoutRequest(
+            name: name,
+            description: description,
+            startTime: startTime,
+            endTime: endTime,
+            totalCaloriesBurned: totalCaloriesBurned,
+            totalDuration: totalDuration,
+            notes: notes
+        )
+        
+        do {
+            let newWorkout: WorkoutResponse = try await apiService.request(
+                endpoint: "/workouts",
+                method: .post,
+                body: request,
+                requiresAuth: true
+            )
+            workouts.insert(newWorkout, at: 0)
+            isLoading = false
+            
+            // Refresh streak after creating workout
+            await fetchCurrentStreak()
+        } catch let error as NetworkError {
+            isLoading = false
+            throw error
+        } catch {
+            isLoading = false
+            throw NetworkError.invalidResponse
+        }
     }
     
-    var totalCaloriesThisWeek: Double {
-        let calendar = Calendar.current
-        let now = Date()
-        let startOfWeek = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? now
-        
-        return workouts.filter { workout in
-            let formatter = ISO8601DateFormatter()
-            guard let workoutDate = formatter.date(from: workout.startTime) else { return false }
-            return workoutDate >= startOfWeek
-        }.reduce(0) { $0 + $1.totalCaloriesBurned }
+    /// Delete a workout
+    func deleteWorkout(id: String) async throws {
+        do {
+            struct EmptyResponse: Decodable {}
+            let _: EmptyResponse = try await apiService.request(
+                endpoint: "/workouts/\(id)",
+                method: .delete,
+                requiresAuth: true
+            )
+            workouts.removeAll { $0.id == id }
+            
+            // Refresh streak after deleting workout
+            await fetchCurrentStreak()
+        } catch let error as NetworkError {
+            throw error
+        } catch {
+            throw NetworkError.invalidResponse
+        }
     }
     
-    var totalDurationThisWeek: Double {
-        let calendar = Calendar.current
-        let now = Date()
-        let startOfWeek = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? now
+    /// Update an existing workout
+    func updateWorkout(
+        id: String,
+        name: String? = nil,
+        description: String? = nil,
+        totalCaloriesBurned: Double? = nil,
+        totalDuration: Int? = nil,
+        notes: String? = nil
+    ) async throws {
+        let request = UpdateWorkoutRequest(
+            name: name,
+            description: description,
+            totalCaloriesBurned: totalCaloriesBurned,
+            totalDuration: totalDuration,
+            notes: notes
+        )
         
-        return workouts.filter { workout in
-            let formatter = ISO8601DateFormatter()
-            guard let workoutDate = formatter.date(from: workout.startTime) else { return false }
-            return workoutDate >= startOfWeek
-        }.reduce(0) { $0 + $1.totalDuration }
+        do {
+            let updated: WorkoutResponse = try await apiService.request(
+                endpoint: "/workouts/\(id)",
+                method: .put,
+                body: request,
+                requiresAuth: true
+            )
+            
+            if let index = workouts.firstIndex(where: { $0.id == id }) {
+                workouts[index] = updated
+            }
+        } catch let error as NetworkError {
+            throw error
+        } catch {
+            throw NetworkError.invalidResponse
+        }
+    }
+    
+    /// Refresh all data (workouts and streak)
+    func refresh() async {
+        await fetchWorkouts()
+        await fetchCurrentStreak()
+    }
+    
+    // MARK: - Private Methods
+    
+    private func handleError(_ error: NetworkError) {
+        isLoading = false
+        errorMessage = error.localizedDescription
+        showError = true
     }
 }
+
+// MARK: - API Models
+
+struct WorkoutResponse: Codable, Identifiable {
+    let id: String
+    let name: String
+    let description: String?
+    let startTime: Date
+    let endTime: Date?
+    let totalCaloriesBurned: Double?
+    let totalDuration: Int?
+    let notes: String?
+    let userId: String
+    let createdAt: Date
+    let updatedAt: Date
+    
+    var formattedDate: String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter.string(from: startTime)
+    }
+    
+    var caloriesDisplay: String {
+        if let calories = totalCaloriesBurned {
+            return "\(Int(calories)) kcal"
+        }
+        return "N/A"
+    }
+    
+    var durationDisplay: String {
+        if let duration = totalDuration {
+            let hours = duration / 60
+            let minutes = duration % 60
+            if hours > 0 {
+                return "\(hours)h \(minutes)m"
+            }
+            return "\(minutes)m"
+        }
+        return "N/A"
+    }
+}
+
+struct CreateWorkoutRequest: Encodable {
+    let name: String
+    let description: String?
+    let startTime: Date
+    let endTime: Date?
+    let totalCaloriesBurned: Double?
+    let totalDuration: Int?
+    let notes: String?
+}
+
+struct UpdateWorkoutRequest: Encodable {
+    let name: String?
+    let description: String?
+    let totalCaloriesBurned: Double?
+    let totalDuration: Int?
+    let notes: String?
+}
+
+struct StreakResponse: Decodable {
+    let streak: Int
+    let lastWorkoutDate: String?
+}
+

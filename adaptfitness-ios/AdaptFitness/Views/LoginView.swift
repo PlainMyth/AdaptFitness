@@ -8,115 +8,110 @@
 import SwiftUI
 
 struct LoginView: View {
-    @EnvironmentObject var authManager: AuthManager
+    @StateObject private var authManager = AuthManager.shared
+    
     @State private var email: String = ""
     @State private var password: String = ""
     @State private var rememberMe: Bool = false
-    @State private var isLoading = false
-    @State private var showingSignUp = false
-    @State private var errorMessage: String?
+    @State private var showRegisterView: Bool = false
     
     var body: some View {
-        VStack(spacing: 20) {
-            // Logo and Welcome
-            VStack(spacing: 12) {
-                Image(systemName: "figure.strengthtraining.traditional")
-                    .font(.system(size: 60))
-                    .foregroundColor(.blue)
+        NavigationView {
+            VStack(spacing: 20) {
+                Image("Logo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 120, height: 120)
+                    .clipShape(Circle())
                 
-                Text("AdaptFitness")
+                Text("Welcome Back")
                     .font(.largeTitle)
                     .fontWeight(.bold)
                 
-                Text("Track your fitness journey")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-            }
-            .padding(.top, 40)
-            
-            // Login Form
-            VStack(spacing: 16) {
                 // Email field
                 TextField("Email", text: $email)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .autocapitalization(.none)
                     .keyboardType(.emailAddress)
-                    .textContentType(.emailAddress)
+                    .padding(.horizontal)
+                    .disabled(authManager.isLoading)
                 
                 // Password field
                 SecureField("Password", text: $password)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .textContentType(.password)
+                    .padding(.horizontal)
+                    .disabled(authManager.isLoading)
                 
                 // Remember me toggle
                 Toggle("Remember Me", isOn: $rememberMe)
+                    .padding(.horizontal)
+                    .disabled(authManager.isLoading)
                 
                 // Error message
-                if let errorMessage = errorMessage {
+                if let errorMessage = authManager.errorMessage {
                     Text(errorMessage)
                         .foregroundColor(.red)
                         .font(.caption)
+                        .padding(.horizontal)
+                        .multilineTextAlignment(.center)
                 }
                 
                 // Login button
-                Button(action: {
-                    Task {
-                        await performLogin()
-                    }
-                }) {
-                    if isLoading {
-                        HStack {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                .scaleEffect(0.8)
-                            Text("Logging in...")
-                        }
+                Button(action: handleLogin) {
+                    if authManager.isLoading {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
                     } else {
                         Text("Login")
+                            .fontWeight(.semibold)
                     }
                 }
                 .frame(maxWidth: .infinity)
                 .padding()
-                .background(Color.blue)
+                .background(isFormValid ? Color.blue : Color.gray)
                 .foregroundColor(.white)
                 .cornerRadius(8)
-                .disabled(isLoading || email.isEmpty || password.isEmpty)
+                .padding(.horizontal)
+                .disabled(!isFormValid || authManager.isLoading)
                 
                 // Sign up link
                 Button("Don't have an account? Sign up") {
-                    showingSignUp = true
+                    showRegisterView = true
                 }
+                .font(.footnote)
                 .padding(.top, 10)
             }
-            .padding(.horizontal)
-            
-            Spacer()
-        }
-        .padding()
-        .sheet(isPresented: $showingSignUp) {
-            SignUpView()
-                .environmentObject(authManager)
+            .padding()
+            .sheet(isPresented: $showRegisterView) {
+                RegisterView()
+            }
         }
     }
     
-    private func performLogin() async {
-        isLoading = true
-        errorMessage = nil
-        
-        await authManager.login(email: email, password: password)
-        
-        if !authManager.isAuthenticated {
-            errorMessage = "Invalid email or password"
+    // MARK: - Computed Properties
+    
+    private var isFormValid: Bool {
+        return !email.isEmpty && !password.isEmpty
+    }
+    
+    // MARK: - Actions
+    
+    private func handleLogin() {
+        Task {
+            do {
+                try await authManager.login(email: email, password: password)
+                // isLoggedIn will be set by onChange observer
+            } catch {
+                // Error is already set in authManager.errorMessage
+                print("Login failed: \(error)")
+            }
         }
-        
-        isLoading = false
     }
 }
 
 struct LoginView_Previews: PreviewProvider {
     static var previews: some View {
         LoginView()
-            .environmentObject(AuthManager())
             .previewDevice("iPhone 17") // Optional: choose simulator device
             .preferredColorScheme(.light)   // Optional: light/dark mode preview
     }

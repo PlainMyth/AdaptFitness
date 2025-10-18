@@ -2,54 +2,32 @@
 //  User.swift
 //  AdaptFitness
 //
-//  Created by AI Assistant
+//  Created by csuftitan on 10/13/25.
 //
-
-import Foundation
+import SwiftUI
 
 struct User: Codable, Identifiable {
-    let id: String
-    let email: String
-    let firstName: String
-    let lastName: String
-    let dateOfBirth: String?
-    let height: Double?
-    let weight: Double?
-    let gender: String?
-    let activityLevel: String?
-    let activityLevelMultiplier: Double?
-    let isActive: Bool
-    let createdAt: String
-    let updatedAt: String
+    var id: String
+    var email: String
+    var firstName: String
+    var lastName: String
+    var token: String?
+    var lastLogin: Date?
+    var loginStreak: Int?
     
     var fullName: String {
         return "\(firstName) \(lastName)"
     }
 }
 
-struct AuthResponse: Codable {
-    let accessToken: String
-    let user: User
-    
-    enum CodingKeys: String, CodingKey {
-        case accessToken = "access_token"
-        case user
-    }
-}
-
-struct RegisterRequest: Codable {
-    let email: String
-    let password: String
-    let firstName: String
-    let lastName: String
-    let dateOfBirth: String?
-    let height: Double?
-    let weight: Double?
-    let gender: String?
-    let activityLevel: String?
-}
-
-struct LoginRequest: Codable {
-    let email: String
-    let password: String
+extension User {
+    static let exampleUser = User(
+        id: UUID().uuidString,
+        email: "user@example.com",
+        firstName: "John",
+        lastName: "Doe",
+        token: "abc123",
+        lastLogin: Date(),
+        loginStreak: 5
+    )
 }

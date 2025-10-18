@@ -2,7 +2,24 @@
 
 A fitness app that redefines functionality and ease of getting into fitness!
 
-## 🚀 Quick Start
+##  Production API
+
+**Live Production URL:** `https://adaptfitness-production.up.railway.app`
+
+**Status:**  Deployed and operational on Railway
+
+**Quick Test:**
+```bash
+curl https://adaptfitness-production.up.railway.app/health
+```
+
+**For iOS Integration:** Update your `APIService.swift` base URL to the production URL above.
+
+**See:** `FRONTEND_INTEGRATION_ANALYSIS.md` for iOS integration details.
+
+---
+
+##  Quick Start
 
 ### Prerequisites
 - Node.js 20+
@@ -35,7 +52,7 @@ A fitness app that redefines functionality and ease of getting into fitness!
 
 The API will be available at `http://localhost:3000`
 
-## 📚 API Endpoints
+##  API Endpoints
 
 ### Health Check
 - `GET /health` - API health status
@@ -162,7 +179,7 @@ GET /workouts/streak/current?tz=America/Los_Angeles
 - **Testing**: Jest with comprehensive test coverage
 - **Health Metrics**: Advanced body composition calculations
 
-## 🔒 Security Features
+##  Security Features
 
 ### Password Security
 - **Strong password requirements** enforced at registration
@@ -189,7 +206,7 @@ GET /workouts/streak/current?tz=America/Los_Angeles
 - **Input validation** on all endpoints
 - **CORS configuration** for secure cross-origin requests
 
-## 🧪 Testing
+##  Testing
 
 ```bash
 # Run unit tests
@@ -271,7 +288,7 @@ NODE_ENV=development
 - **Error Handling**: Detailed error messages and status codes
 - **Data Integrity**: Ensures data consistency and accuracy
 
-## 📊 Database Schema
+##  Database Schema
 
 ### Users
 - id (UUID, Primary Key)
@@ -316,7 +333,7 @@ NODE_ENV=development
 - calculatedMetrics (JSON: BMI, RMR, TDEE, etc.)
 - timestamps
 
-## 🚀 Deployment
+##  Deployment
 
 1. Build the application: `npm run build`
 2. Set production environment variables

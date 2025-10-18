@@ -1,0 +1,41 @@
+# Railway Ignore File
+# Files and directories to exclude from deployment
+
+# Tests
+*.spec.ts
+*.test.ts
+test/
+coverage/
+
+# Development
+nodemon.json
+.env.local
+.env.development
+
+# Documentation
+*.md
+!README.md
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Temporary files
+*.tmp
+.cache/
+

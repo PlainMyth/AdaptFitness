@@ -50,7 +50,11 @@ import { throttlerConfig } from './config/throttler.config';
         password: configService.get<string>('DATABASE_PASSWORD') || 'password',
         database: configService.get<string>('DATABASE_NAME') || 'adaptfitness',
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: process.env.NODE_ENV !== 'production',
+        // Allow explicit control of synchronize via env var for initial deployment
+        // Set TYPEORM_SYNCHRONIZE=true for initial table creation, then false for production
+        synchronize: configService.get<string>('TYPEORM_SYNCHRONIZE') === 'true' 
+          ? true 
+          : process.env.NODE_ENV !== 'production',
         logging: process.env.NODE_ENV === 'development',
       }),
       inject: [ConfigService],
