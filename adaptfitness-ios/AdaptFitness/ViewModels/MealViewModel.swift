@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import Combine
 
 @MainActor
 class MealViewModel: ObservableObject {
@@ -14,11 +15,12 @@ class MealViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var error: String?
     
-    private let authManager = AuthManager()
+    private let authManager = AuthManager.shared
     private let apiService = APIService.shared
     
     func loadMeals() {
-        guard let token = authManager.authToken else {
+        // Check if user is authenticated
+        guard authManager.isAuthenticated else {
             error = "Not authenticated"
             return
         }
@@ -28,7 +30,12 @@ class MealViewModel: ObservableObject {
         
         Task {
             do {
-                let fetchedMeals = try await apiService.getMeals(token: token)
+                // Use the new APIService.request() method
+                let fetchedMeals: [Meal] = try await apiService.request(
+                    endpoint: "/meals",
+                    method: .get,
+                    requiresAuth: true
+                )
                 meals = fetchedMeals
                 isLoading = false
             } catch {
@@ -56,10 +63,15 @@ class MealViewModel: ObservableObject {
         let today = Date()
         
         return meals.filter { meal in
-            let formatter = ISO8601DateFormatter()
-            guard let mealDate = formatter.date(from: meal.mealTime) else { return false }
-            return calendar.isDate(mealDate, inSameDayAs: today)
-        }.reduce(0) { $0 + $1.totalCalories }
+            // Handle both mealTime (String?) and date (Date) fields
+            if let mealTime = meal.mealTime {
+                let formatter = ISO8601DateFormatter()
+                guard let mealDate = formatter.date(from: mealTime) else { return false }
+                return calendar.isDate(mealDate, inSameDayAs: today)
+            } else {
+                return calendar.isDate(meal.date, inSameDayAs: today)
+            }
+        }.reduce(0) { $0 + ($1.totalCalories ?? 0) }
     }
     
     var totalCaloriesThisWeek: Double {
@@ -68,10 +80,15 @@ class MealViewModel: ObservableObject {
         let startOfWeek = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? now
         
         return meals.filter { meal in
-            let formatter = ISO8601DateFormatter()
-            guard let mealDate = formatter.date(from: meal.mealTime) else { return false }
-            return mealDate >= startOfWeek
-        }.reduce(0) { $0 + $1.totalCalories }
+            // Handle both mealTime (String?) and date (Date) fields
+            if let mealTime = meal.mealTime {
+                let formatter = ISO8601DateFormatter()
+                guard let mealDate = formatter.date(from: mealTime) else { return false }
+                return mealDate >= startOfWeek
+            } else {
+                return meal.date >= startOfWeek
+            }
+        }.reduce(0) { $0 + ($1.totalCalories ?? 0) }
     }
     
     var totalProteinToday: Double {
@@ -79,9 +96,14 @@ class MealViewModel: ObservableObject {
         let today = Date()
         
         return meals.filter { meal in
-            let formatter = ISO8601DateFormatter()
-            guard let mealDate = formatter.date(from: meal.mealTime) else { return false }
-            return calendar.isDate(mealDate, inSameDayAs: today)
+            // Handle both mealTime (String?) and date (Date) fields
+            if let mealTime = meal.mealTime {
+                let formatter = ISO8601DateFormatter()
+                guard let mealDate = formatter.date(from: mealTime) else { return false }
+                return calendar.isDate(mealDate, inSameDayAs: today)
+            } else {
+                return calendar.isDate(meal.date, inSameDayAs: today)
+            }
         }.compactMap { $0.totalProtein }.reduce(0, +)
     }
     
@@ -96,9 +118,14 @@ class MealViewModel: ObservableObject {
         let today = Date()
         
         return meals.filter { meal in
-            let formatter = ISO8601DateFormatter()
-            guard let mealDate = formatter.date(from: meal.mealTime) else { return false }
-            return calendar.isDate(mealDate, inSameDayAs: today)
+            // Handle both mealTime (String?) and date (Date) fields
+            if let mealTime = meal.mealTime {
+                let formatter = ISO8601DateFormatter()
+                guard let mealDate = formatter.date(from: mealTime) else { return false }
+                return calendar.isDate(mealDate, inSameDayAs: today)
+            } else {
+                return calendar.isDate(meal.date, inSameDayAs: today)
+            }
         }
     }
 }

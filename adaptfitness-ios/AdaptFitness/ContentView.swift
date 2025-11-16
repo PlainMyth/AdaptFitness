@@ -8,29 +8,9 @@
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject private var authManager = AuthManager.shared
-    
     var body: some View {
-        TabView {
-            HomeView()
-                .tabItem {
-                    Image(systemName: "house.fill")
-                    Text("Home")
-                }
-            
-            WorkoutListView()
-                .tabItem {
-                    Image(systemName: "figure.run")
-                    Text("Workouts")
-                }
-            
-            ProfileView()
-                .tabItem {
-                    Image(systemName: "person.fill")
-                    Text("Profile")
-                }
-        }
-        .environmentObject(authManager)
+        // ContentView is not used - we use HomePageView directly in AdaptFitnessApp
+        Text("ContentView not used - using HomePageView directly")
     }
 }
 

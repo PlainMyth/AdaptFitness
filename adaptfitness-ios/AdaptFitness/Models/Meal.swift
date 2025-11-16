@@ -6,12 +6,72 @@
 //
 import SwiftUI
 
+enum MealType: String, Codable, CaseIterable {
+    case breakfast = "breakfast"
+    case lunch = "lunch"
+    case dinner = "dinner"
+    case snack = "snack"
+    case other = "other"
+    
+    var displayName: String {
+        switch self {
+        case .breakfast: return "Breakfast"
+        case .lunch: return "Lunch"
+        case .dinner: return "Dinner"
+        case .snack: return "Snack"
+        case .other: return "Other"
+        }
+    }
+    
+    var icon: String {
+        switch self {
+        case .breakfast: return "sunrise.fill"
+        case .lunch: return "sun.max.fill"
+        case .dinner: return "moon.fill"
+        case .snack: return "leaf.fill"
+        case .other: return "fork.knife"
+        }
+    }
+}
+
 struct Meal: Codable, Identifiable {
     var id: String
     var userId: String
     var date: Date
     var type: String
+    var mealType: MealType? {
+        MealType(rawValue: type)
+    }
     var foods: [FoodEntry]
+    
+    // Backend API fields
+    var name: String?
+    var description: String?
+    var mealTime: String?
+    var totalCalories: Double?
+    var totalProtein: Double?
+    var totalCarbs: Double?
+    var totalFat: Double?
+    var totalFiber: Double?
+    var totalSugar: Double?
+    var totalSodium: Double?
+}
+
+// Request struct for creating meals via API
+struct CreateMealRequest: Codable {
+    let name: String
+    let description: String?
+    let mealTime: String
+    let totalCalories: Double
+    let totalProtein: Double?
+    let totalCarbs: Double?
+    let totalFat: Double?
+    let totalFiber: Double?
+    let totalSugar: Double?
+    let totalSodium: Double?
+    let mealType: MealType?
+    let servingSize: Double?
+    let servingUnit: String?
 }
 
 extension Meal {

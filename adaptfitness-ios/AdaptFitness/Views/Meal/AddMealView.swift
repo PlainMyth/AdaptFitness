@@ -9,7 +9,7 @@ import SwiftUI
 
 struct AddMealView: View {
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var authManager = AuthManager()
+    @StateObject private var authManager = AuthManager.shared
     
     @State private var name = ""
     @State private var description = ""
@@ -134,8 +134,7 @@ struct AddMealView: View {
     
     private func saveMeal() {
         guard !name.isEmpty,
-              !calories.isEmpty,
-              let authToken = authManager.authToken else { return }
+              !calories.isEmpty else { return }
         
         let formatter = ISO8601DateFormatter()
         
@@ -157,7 +156,15 @@ struct AddMealView: View {
         
         Task {
             do {
-                let newMeal = try await APIService.shared.createMeal(mealRequest, token: authToken)
+                // Use the new APIService.request() method
+                // The new Core/Network/APIService handles auth automatically via KeychainManager
+                let apiService = APIService.shared
+                let newMeal: Meal = try await apiService.request(
+                    endpoint: "/meals",
+                    method: .post,
+                    body: mealRequest,
+                    requiresAuth: true
+                )
                 await MainActor.run {
                     onMealAdded(newMeal)
                     dismiss()

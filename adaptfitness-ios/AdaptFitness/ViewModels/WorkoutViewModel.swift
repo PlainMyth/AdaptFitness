@@ -22,6 +22,9 @@ class WorkoutViewModel: ObservableObject {
     
     // MARK: - Private Properties
     
+    // Use APIService.shared (from Core/Network/APIService.swift)
+    // This has the .request() method with HTTPMethod enum support
+    // Note: There are two APIService classes - this uses the one with .request() method
     private let apiService = APIService.shared
     
     // MARK: - Public Methods
@@ -74,17 +77,34 @@ class WorkoutViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
         
-        let request = CreateWorkoutRequest(
+        // Convert Date to ISO8601 String format for backend
+        let formatter = ISO8601DateFormatter()
+        let startTimeString = formatter.string(from: startTime)
+        let endTimeString = endTime != nil ? formatter.string(from: endTime!) : nil
+        
+        // Create request matching backend CreateWorkoutDto structure
+        struct BackendCreateWorkoutRequest: Encodable {
+            let name: String
+            let description: String?
+            let startTime: String
+            let endTime: String?
+            let totalCaloriesBurned: Double?
+            let totalDuration: Int?
+            let notes: String?
+        }
+        
+        let request = BackendCreateWorkoutRequest(
             name: name,
             description: description,
-            startTime: startTime,
-            endTime: endTime,
+            startTime: startTimeString,
+            endTime: endTimeString,
             totalCaloriesBurned: totalCaloriesBurned,
             totalDuration: totalDuration,
             notes: notes
         )
         
         do {
+            // Use the new APIService.request() method
             let newWorkout: WorkoutResponse = try await apiService.request(
                 endpoint: "/workouts",
                 method: .post,
@@ -217,15 +237,8 @@ struct WorkoutResponse: Codable, Identifiable {
     }
 }
 
-struct CreateWorkoutRequest: Encodable {
-    let name: String
-    let description: String?
-    let startTime: Date
-    let endTime: Date?
-    let totalCaloriesBurned: Double?
-    let totalDuration: Int?
-    let notes: String?
-}
+// Note: CreateWorkoutRequest is defined in Models/Workout.swift
+// Using that definition to avoid duplication
 
 struct UpdateWorkoutRequest: Encodable {
     let name: String?

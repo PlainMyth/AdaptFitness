@@ -10,14 +10,15 @@ import Foundation
 class APIService {
     static let shared = APIService()
     
-    // Production URL - Change to localhost for local testing
+    // Base URL configuration
+    // Change this to match your backend server location
     private let baseURL: String = {
         #if DEBUG
-        // For testing with local backend
-        // return "http://localhost:3000"
+        // For testing with local backend (default for development)
+        return "http://localhost:3000"
         
-        // For testing with production backend (recommended during development)
-        return "https://adaptfitness-production.up.railway.app"
+        // Uncomment below to use production backend instead
+        // return "https://adaptfitness-production.up.railway.app"
         #else
         // Production
         return "https://adaptfitness-production.up.railway.app"

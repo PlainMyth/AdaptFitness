@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import Combine
 
 @MainActor
 class GoalCalendarViewModel: ObservableObject {
@@ -16,11 +17,12 @@ class GoalCalendarViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var error: String?
     
-    private let authManager = AuthManager()
+    private let authManager = AuthManager.shared
     private let apiService = APIService.shared
     
     func loadGoals() {
-        guard let token = authManager.authToken else {
+        // Check if user is authenticated
+        guard authManager.isAuthenticated else {
             error = "Not authenticated"
             return
         }
@@ -28,18 +30,35 @@ class GoalCalendarViewModel: ObservableObject {
         isLoading = true
         error = nil
         
-        Task {
+        Task { @MainActor in
             do {
-                async let allGoalsTask = apiService.getGoals(token: token)
-                async let currentWeekGoalsTask = apiService.getCurrentWeekGoals(token: token)
-                async let statisticsTask = apiService.getGoalStatistics(token: token)
-                
-                let (allGoalsResult, currentWeekGoalsResult, statisticsResult) = await (
-                    try allGoalsTask,
-                    try currentWeekGoalsTask,
-                    try statisticsTask
+                // Use the new APIService.request() method with generic endpoints
+                async let allGoalsTask: [GoalCalendar] = apiService.request(
+                    endpoint: "/goal-calendar",
+                    method: .get,
+                    requiresAuth: true
                 )
                 
+                async let currentWeekGoalsTask: [GoalCalendar] = apiService.request(
+                    endpoint: "/goal-calendar/current-week",
+                    method: .get,
+                    requiresAuth: true
+                )
+                
+                // Decode GoalStatistics separately to avoid MainActor concurrency warning
+                // GoalStatistics is a simple Codable struct that doesn't need MainActor isolation
+                let statisticsResult: GoalStatistics = try await apiService.request(
+                    endpoint: "/goal-calendar/statistics",
+                    method: .get,
+                    requiresAuth: true
+                )
+                
+                let (allGoalsResult, currentWeekGoalsResult) = await (
+                    try allGoalsTask,
+                    try currentWeekGoalsTask
+                )
+                
+                // Update @Published properties (already on MainActor)
                 allGoals = allGoalsResult
                 currentWeekGoals = currentWeekGoalsResult
                 statistics = statisticsResult
@@ -52,14 +71,19 @@ class GoalCalendarViewModel: ObservableObject {
     }
     
     func refreshGoals() async {
-        guard let token = authManager.authToken else {
+        // Check if user is authenticated
+        guard authManager.isAuthenticated else {
             error = "Not authenticated"
             return
         }
         
         do {
-            // Update progress for all goals
-            let updatedGoals = try await apiService.updateGoalProgress(token: token)
+            // Update progress for all goals using POST endpoint
+            let updatedGoals: [GoalCalendar] = try await apiService.request(
+                endpoint: "/goal-calendar/update-all-progress",
+                method: .post,
+                requiresAuth: true
+            )
             allGoals = updatedGoals
             currentWeekGoals = updatedGoals.filter { goal in
                 isGoalInCurrentWeek(goal)
