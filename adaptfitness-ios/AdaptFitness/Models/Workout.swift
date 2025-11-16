@@ -2,55 +2,87 @@
 //  Workout.swift
 //  AdaptFitness
 //
-//  Created by csuftitan on 10/13/25.
+//  Created by AI Assistant
 //
 
-import SwiftUI
+import Foundation
 
-//struct Workout: Codable {
-//    var name: String
-//    var calories: Double?
-//}
-
-struct Workout: Identifiable {
-    let id = UUID()
+struct Workout: Codable, Identifiable {
+    let id: String
     let name: String
-    let intensity: String
-    let calories: String
-    let systemImage: String
+    let description: String?
+    let startTime: String
+    let endTime: String?
+    let totalCaloriesBurned: Double
+    let totalDuration: Double
+    let totalSets: Double
+    let totalReps: Double
+    let totalWeight: Double
+    let workoutType: WorkoutType?
+    let isCompleted: Bool
+    let userId: String
+    let createdAt: String
+    let updatedAt: String
+    
+    var duration: Double {
+        if let endTime = endTime,
+           let start = ISO8601DateFormatter().date(from: startTime),
+           let end = ISO8601DateFormatter().date(from: endTime) {
+            return end.timeIntervalSince(start) / 60 // Convert to minutes
+        }
+        return totalDuration
+    }
+    
+    var status: String {
+        if isCompleted { return "completed" }
+        if endTime == nil { return "in_progress" }
+        return "scheduled"
+    }
 }
 
-extension Workout {
-    static let workout: [Workout] = [
-        Workout(
-            name: "Morning Run",
-            intensity: "High",
-            calories: "400 kcal",
-            systemImage: "figure.run"
-        ),
-        Workout(
-            name: "Yoga Flow",
-            intensity: "Low",
-            calories: "180 kcal",
-            systemImage: "figure.cooldown"
-        ),
-        Workout(
-            name: "Strength Training",
-            intensity: "Medium",
-            calories: "350 kcal",
-            systemImage: "dumbbell"
-        ),
-        Workout(
-            name: "Cycling",
-            intensity: "High",
-            calories: "500 kcal",
-            systemImage: "bicycle"
-        ),
-        Workout(
-            name: "Swimming",
-            intensity: "Medium",
-            calories: "420 kcal",
-            systemImage: "figure.pool.swim"
-        )
-    ]
+enum WorkoutType: String, Codable, CaseIterable {
+    case strength = "strength"
+    case cardio = "cardio"
+    case flexibility = "flexibility"
+    case sports = "sports"
+    case other = "other"
+    
+    var displayName: String {
+        switch self {
+        case .strength: return "Strength Training"
+        case .cardio: return "Cardio"
+        case .flexibility: return "Flexibility"
+        case .sports: return "Sports"
+        case .other: return "Other"
+        }
+    }
+    
+    var icon: String {
+        switch self {
+        case .strength: return "dumbbell.fill"
+        case .cardio: return "heart.fill"
+        case .flexibility: return "figure.flexibility"
+        case .sports: return "sportscourt.fill"
+        case .other: return "figure.mixed.cardio"
+        }
+    }
+}
+
+struct CreateWorkoutRequest: Codable {
+    let name: String
+    let description: String?
+    let startTime: String
+    let endTime: String?
+    let totalCaloriesBurned: Double
+    let totalDuration: Double
+    let totalSets: Double
+    let totalReps: Double
+    let totalWeight: Double
+    let workoutType: WorkoutType?
+    let isCompleted: Bool
+}
+
+struct WorkoutStreak: Codable {
+    let streak: Int
+    let lastWorkoutDate: String?
 }

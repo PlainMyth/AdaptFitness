@@ -23,5 +23,6 @@ import { AuthModule } from '../auth/auth.module';
   ],
   providers: [MealService],
   controllers: [MealController],
+  exports: [MealService],
 })
 export class MealModule {}
