@@ -12,5 +12,23 @@
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>This app requires access to your photo library to choose pictures.</string>
 
+	<!-- App Transport Security Settings -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<!-- Allow localhost for iOS Simulator development -->
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>localhost</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
+
 </dict>
 </plist>

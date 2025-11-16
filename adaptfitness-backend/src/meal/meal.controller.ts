@@ -1,8 +1,10 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Request, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Request, UseGuards, Query, ValidationPipe } from '@nestjs/common';
 import { MealService } from './meal.service';
+import { FoodService } from './food.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateMealDto } from './dto/create-meal.dto';
 import { UpdateMealDto } from './dto/update-meal.dto';
+import { FoodSearchDto } from './dto/food-search.dto';
 
 /**
  * Meal Controller
@@ -20,7 +22,10 @@ import { UpdateMealDto } from './dto/update-meal.dto';
 @Controller('meals')
 @UseGuards(JwtAuthGuard)
 export class MealController {
-  constructor(private readonly mealService: MealService) {}
+  constructor(
+    private readonly mealService: MealService,
+    private readonly foodService: FoodService,
+  ) {}
 
   @Post()
   async create(@Request() req, @Body() createMealDto: CreateMealDto) {
@@ -36,6 +41,28 @@ export class MealController {
   @Get('streak/current')
   async getCurrentStreak(@Request() req, @Query('tz') timeZone?: string) {
     return this.mealService.getCurrentStreakInTimeZone(req.user.id, timeZone);
+  }
+
+  /**
+   * Search for foods using OpenFoodFacts API
+   * GET /meals/foods/search?query=apple&page=1&pageSize=20
+   * Note: Must come before @Get(':id') to avoid route conflicts
+   */
+  @Get('foods/search')
+  async searchFoods(
+    @Query(new ValidationPipe({ transform: true, transformOptions: { enableImplicitConversion: true } })) searchDto: FoodSearchDto,
+  ) {
+    return this.foodService.searchFoods(searchDto);
+  }
+
+  /**
+   * Get food by barcode using OpenFoodFacts API
+   * GET /meals/foods/barcode/:barcode
+   * Note: Must come before @Get(':id') to avoid route conflicts
+   */
+  @Get('foods/barcode/:barcode')
+  async getFoodByBarcode(@Param('barcode') barcode: string) {
+    return this.foodService.getFoodByBarcode(barcode);
   }
 
   @Get(':id')
