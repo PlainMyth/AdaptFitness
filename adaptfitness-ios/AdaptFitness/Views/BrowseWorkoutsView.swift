@@ -7,26 +7,27 @@
 
 import SwiftUI
 
-//struct Workout: Identifiable {
-//    let id = UUID()
-//    let name: String
-//    let intensity: String
-//    let calories: String
-//    let systemImage: String
-//}
+// BrowseWorkout struct for displaying workout templates in browse view
+struct BrowseWorkout: Identifiable {
+    let id = UUID()
+    let name: String
+    let intensity: String
+    let calories: String
+    let systemImage: String
+}
 
 struct BrowseWorkoutsView: View {
-    @State private var workoutToShow: Workout?
+    @State private var workoutToShow: BrowseWorkout?
     
-    let workouts: [Workout] = [
-        Workout(name: "Add Custom Workout", intensity: "", calories: "", systemImage: "plus.circle"),
-        Workout(name: "Running", intensity: "High", calories: "352 per 30 min", systemImage: "figure.run"),
-        Workout(name: "Walking", intensity: "Low", calories: "150 per 30 min", systemImage: "figure.walk"),
-        Workout(name: "Swimming", intensity: "High", calories: "215 per 30 min", systemImage: "drop.fill"),
-        Workout(name: "Cycling", intensity: "Low-High", calories: "225 per 30 min", systemImage: "bicycle"),
-        Workout(name: "Hiking", intensity: "Low-Moderate", calories: "180 per 30 min", systemImage: "figure.hiking"),
-        Workout(name: "Yoga", intensity: "Low-High", calories: "173 per 30 min", systemImage: "figure.cooldown"),
-        Workout(name: "Boxing", intensity: "High", calories: "400 per 30 min", systemImage: "figure.boxing")
+    let workouts: [BrowseWorkout] = [
+        BrowseWorkout(name: "Add Custom Workout", intensity: "", calories: "", systemImage: "plus.circle"),
+        BrowseWorkout(name: "Running", intensity: "High", calories: "352 per 30 min", systemImage: "figure.run"),
+        BrowseWorkout(name: "Walking", intensity: "Low", calories: "150 per 30 min", systemImage: "figure.walk"),
+        BrowseWorkout(name: "Swimming", intensity: "High", calories: "215 per 30 min", systemImage: "drop.fill"),
+        BrowseWorkout(name: "Cycling", intensity: "Low-High", calories: "225 per 30 min", systemImage: "bicycle"),
+        BrowseWorkout(name: "Hiking", intensity: "Low-Moderate", calories: "180 per 30 min", systemImage: "figure.hiking"),
+        BrowseWorkout(name: "Yoga", intensity: "Low-High", calories: "173 per 30 min", systemImage: "figure.cooldown"),
+        BrowseWorkout(name: "Boxing", intensity: "High", calories: "400 per 30 min", systemImage: "figure.boxing")
     ]
     
     var body: some View {
@@ -53,13 +54,31 @@ struct BrowseWorkoutsView: View {
             Spacer()
         }
         .sheet(item: $workoutToShow) { workout in
-            WorkoutDetailView(workout: workout)
+            // Convert BrowseWorkout to Workout for WorkoutDetailView
+            let convertedWorkout = Workout(
+                id: workout.id.uuidString,
+                name: workout.name,
+                description: nil,
+                startTime: ISO8601DateFormatter().string(from: Date()),
+                endTime: nil,
+                totalCaloriesBurned: 0,
+                totalDuration: 0,
+                totalSets: 0,
+                totalReps: 0,
+                totalWeight: 0,
+                workoutType: .other,
+                isCompleted: false,
+                userId: "",
+                createdAt: ISO8601DateFormatter().string(from: Date()),
+                updatedAt: ISO8601DateFormatter().string(from: Date())
+            )
+            WorkoutDetailView(workout: convertedWorkout)
         }
     }
 }
 
 struct WorkoutTile: View {
-    let workout: Workout
+    let workout: BrowseWorkout
     let onTap: () -> Void
     
     var body: some View {

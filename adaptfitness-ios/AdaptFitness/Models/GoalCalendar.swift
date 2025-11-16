@@ -96,6 +96,18 @@ enum GoalType: String, Codable, CaseIterable {
         case .streakDays: return "calendar.badge.plus"
         }
     }
+    
+    var unit: String {
+        switch self {
+        case .workoutsCount: return "workouts"
+        case .totalDuration: return "minutes"
+        case .totalCalories: return "calories"
+        case .totalSets: return "sets"
+        case .totalReps: return "reps"
+        case .totalWeight: return "kg"
+        case .streakDays: return "days"
+        }
+    }
 }
 
 struct CreateGoalRequest: Codable {
@@ -108,6 +120,8 @@ struct CreateGoalRequest: Codable {
     let isActive: Bool
 }
 
+// GoalStatistics struct for API responses
+// Note: Not marked with @MainActor to allow decoding in non-isolated contexts
 struct GoalStatistics: Codable {
     let totalGoals: Int
     let completedGoals: Int

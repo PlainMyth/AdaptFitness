@@ -265,10 +265,23 @@ enum DurationMode: String, CaseIterable {
 }
 
 #Preview {
-    WorkoutDetailView(workout: Workout(
+    // Create a sample Workout for preview
+    let sampleWorkout = Workout(
+        id: UUID().uuidString,
         name: "Walking",
-        intensity: "Low",
-        calories: "150 per 30 min",
-        systemImage: "figure.walk"
-    ))
+        description: nil,
+        startTime: ISO8601DateFormatter().string(from: Date()),
+        endTime: nil,
+        totalCaloriesBurned: 150,
+        totalDuration: 30,
+        totalSets: 0,
+        totalReps: 0,
+        totalWeight: 0,
+        workoutType: .cardio,
+        isCompleted: false,
+        userId: "preview-user",
+        createdAt: ISO8601DateFormatter().string(from: Date()),
+        updatedAt: ISO8601DateFormatter().string(from: Date())
+    )
+    return WorkoutDetailView(workout: sampleWorkout)
 }

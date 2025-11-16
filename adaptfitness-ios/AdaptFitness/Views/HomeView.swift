@@ -7,6 +7,75 @@
 
 import SwiftUI
 
+// Day struct for calendar display
+struct Day: Identifiable {
+    let id = UUID()
+    let date: Date
+    let isCompleted: Bool
+}
+
+// Helper function to generate current week days
+func generateCurrentWeek(completedWorkouts: [Date]) -> [Day] {
+    let calendar = Calendar.current
+    let today = Date()
+    
+    // Get start of week (Monday)
+    let weekday = calendar.component(.weekday, from: today)
+    let daysFromMonday = (weekday + 5) % 7 // Convert Sunday=1 to Monday=0
+    guard let startOfWeek = calendar.date(byAdding: .day, value: -daysFromMonday, to: today) else {
+        return []
+    }
+    
+    var days: [Day] = []
+    for i in 0..<7 {
+        if let date = calendar.date(byAdding: .day, value: i, to: startOfWeek) {
+            let isCompleted = completedWorkouts.contains { calendar.isDate($0, inSameDayAs: date) }
+            days.append(Day(date: date, isCompleted: isCompleted))
+        }
+    }
+    return days
+}
+
+// Placeholder HorizontalCalendar view
+struct HorizontalCalendar: View {
+    let days: [Day]
+    
+    var body: some View {
+        HStack(spacing: 8) {
+            ForEach(days) { day in
+                VStack(spacing: 4) {
+                    Text(dayOfWeekString(from: day.date))
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                    Text("\(Calendar.current.component(.day, from: day.date))")
+                        .font(.headline)
+                        .foregroundColor(day.isCompleted ? .green : .primary)
+                    if day.isCompleted {
+                        Circle()
+                            .fill(Color.green)
+                            .frame(width: 6, height: 6)
+                    } else {
+                        Circle()
+                            .fill(Color.clear)
+                            .frame(width: 6, height: 6)
+                    }
+                }
+                .frame(width: 40)
+                .padding(.vertical, 8)
+                .background(Calendar.current.isDateInToday(day.date) ? Color.blue.opacity(0.1) : Color.clear)
+                .cornerRadius(8)
+            }
+        }
+        .padding(.horizontal)
+    }
+    
+    private func dayOfWeekString(from date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEE"
+        return formatter.string(from: date)
+    }
+}
+
 struct HomePageView: View {
     @Binding var isLoggedIn: Bool
     @State private var selectedTab: FooterTabBar.Tab = .home
@@ -18,6 +87,7 @@ struct HomePageView: View {
     @State private var capturedImage: UIImage?
     @State private var showBarcodeScanner = false
     @State private var scannedBarcode: String?
+    @State private var showingSettings = false
     
 //    hardcoded data used to mimic returned request ============
     
@@ -33,6 +103,10 @@ struct HomePageView: View {
             // Show different views based on selected tab
             if selectedTab == .browse {
                 BrowseWorkoutsView()
+            } else if selectedTab == .stats {
+                TrackingView()
+            } else if selectedTab == .calendar {
+                GoalCalendarView()
             } else {
                 // Home view content
                 homeContent
@@ -42,6 +116,26 @@ struct HomePageView: View {
             FooterTabBar(selectedTab: $selectedTab)
         }
         .edgesIgnoringSafeArea(.bottom)
+        .overlay(
+            // Settings button in top-left corner
+            VStack {
+                HStack {
+                    Button(action: {
+                        showingSettings = true
+                    }) {
+                        Image(systemName: "gearshape.fill")
+                            .font(.title2)
+                            .foregroundColor(.blue)
+                            .padding()
+                    }
+                    Spacer()
+                }
+                Spacer()
+            }
+        )
+        .sheet(isPresented: $showingSettings) {
+            ProfileView()
+        }
     }
     
     var homeContent: some View {

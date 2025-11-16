@@ -14,3 +14,6 @@ build/
 .env.production
 .env.staging
 *.env
+
+# Cursor AI planning directory (contains sensitive credentials)
+.cursor/

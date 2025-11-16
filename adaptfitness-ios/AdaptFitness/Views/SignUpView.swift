@@ -185,26 +185,24 @@ struct SignUpView: View {
         isLoading = true
         errorMessage = nil
         
-        let formatter = ISO8601DateFormatter()
-        
-        let registerRequest = RegisterRequest(
-            email: email,
-            password: password,
-            firstName: firstName,
-            lastName: lastName,
-            dateOfBirth: formatter.string(from: dateOfBirth),
-            height: height.isEmpty ? nil : Double(height),
-            weight: weight.isEmpty ? nil : Double(weight),
-            gender: gender.isEmpty ? nil : gender,
-            activityLevel: activityLevel.isEmpty ? nil : activityLevel
-        )
-        
-        await authManager.register(user: registerRequest)
-        
-        if authManager.isAuthenticated {
-            dismiss()
-        } else {
-            errorMessage = "Failed to create account. Please try again."
+        do {
+            // Use the new AuthManager.register() method signature
+            // Note: Additional fields (dateOfBirth, height, weight, gender, activityLevel)
+            // can be updated via user profile endpoint after registration
+            try await authManager.register(
+                email: email,
+                password: password,
+                firstName: firstName,
+                lastName: lastName
+            )
+            
+            if authManager.isAuthenticated {
+                dismiss()
+            } else {
+                errorMessage = "Failed to create account. Please try again."
+            }
+        } catch {
+            errorMessage = authManager.errorMessage ?? "Failed to create account. Please try again."
         }
         
         isLoading = false
@@ -213,5 +211,5 @@ struct SignUpView: View {
 
 #Preview {
     SignUpView()
-        .environmentObject(AuthManager())
+        .environmentObject(AuthManager.shared)
 }
