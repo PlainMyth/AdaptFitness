@@ -9,20 +9,23 @@
 
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { HttpModule } from '@nestjs/axios';
 import { Meal } from './meal.entity';
 import { MealService } from './meal.service';
 import { MealController } from './meal.controller';
+import { FoodService } from './food.service';
 import { UserModule } from '../user/user.module';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Meal]),
+    HttpModule,
     UserModule,
     AuthModule,
   ],
-  providers: [MealService],
+  providers: [MealService, FoodService],
   controllers: [MealController],
-  exports: [MealService],
+  exports: [MealService, FoodService],
 })
 export class MealModule {}

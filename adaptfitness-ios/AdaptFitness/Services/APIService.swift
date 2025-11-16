@@ -10,7 +10,21 @@ import Foundation
 class APIService: ObservableObject {
     static let shared = APIService()
     
-    private let baseURL = "http://localhost:3000"
+    // Universal configuration that works for everyone
+    // - iOS Simulator: Uses localhost (works universally)
+    // - Physical Device: Uses production URL (works from anywhere)
+    // - Can be overridden via environment variables or build settings
+    private var baseURL: String {
+        // Check if running on simulator
+        #if targetEnvironment(simulator)
+        // Simulator can connect to localhost - works for everyone
+        return "http://localhost:3000"
+        #else
+        // Physical device uses production URL - works universally
+        return "https://adaptfitness-production.up.railway.app"
+        #endif
+    }
+    
     private let session = URLSession.shared
     
     private init() {}
@@ -93,6 +107,46 @@ class APIService: ObservableObject {
             method: "GET",
             token: token,
             responseType: MealStreak.self
+        )
+    }
+    
+    // MARK: - Food Search (OpenFoodFacts)
+    
+    func searchFoods(query: String, page: Int = 1, pageSize: Int = 20, token: String) async throws -> FoodSearchResponse {
+        guard let encodedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let url = URL(string: "\(baseURL)/meals/foods/search?query=\(encodedQuery)&page=\(page)&pageSize=\(pageSize)") else {
+            throw APIError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        let (data, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        guard httpResponse.statusCode == 200 else {
+            throw APIError.httpError(httpResponse.statusCode)
+        }
+        
+        do {
+            let decoder = JSONDecoder()
+            return try decoder.decode(FoodSearchResponse.self, from: data)
+        } catch {
+            throw APIError.decodingError
+        }
+    }
+    
+    func getFoodByBarcode(barcode: String, token: String) async throws -> SimplifiedFoodItem {
+        return try await performAuthenticatedRequest(
+            endpoint: "/meals/foods/barcode/\(barcode)",
+            method: "GET",
+            token: token,
+            responseType: SimplifiedFoodItem.self
         )
     }
     
