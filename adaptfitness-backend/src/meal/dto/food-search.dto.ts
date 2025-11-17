@@ -38,16 +38,26 @@ export class FoodItemDto {
   categories?: string;
   image_url?: string;
   nutriments?: {
+    // OpenFoodFacts can use underscores or dashes in field names
     energy_kcal_100g?: number;
+    'energy-kcal_100g'?: number;
+    energy_100g?: number; // Sometimes in kJ
     proteins_100g?: number;
+    'proteins-100g'?: number;
     carbohydrates_100g?: number;
+    'carbohydrates-100g'?: number;
     fat_100g?: number;
+    'fat-100g'?: number;
     fiber_100g?: number;
+    'fiber-100g'?: number;
     sugars_100g?: number;
+    'sugars-100g'?: number;
     sodium_100g?: number;
+    'sodium-100g'?: number;
+    [key: string]: any; // Allow additional fields for flexibility
   };
   serving_size?: string;
-  serving_quantity?: number;
+  serving_quantity?: number | string; // OpenFoodFacts can return this as string or number
 }
 
 /**

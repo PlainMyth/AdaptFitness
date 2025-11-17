@@ -18,6 +18,12 @@ struct ContentView: View {
                     Text("Home")
                 }
             
+            MealTrackerMainView()
+                .tabItem {
+                    Image(systemName: "fork.knife")
+                    Text("Meals")
+                }
+            
             WorkoutListView()
                 .tabItem {
                     Image(systemName: "figure.run")

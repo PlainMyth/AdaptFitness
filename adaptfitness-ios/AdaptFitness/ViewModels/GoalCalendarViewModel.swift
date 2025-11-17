@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import Combine
 
 @MainActor
 class GoalCalendarViewModel: ObservableObject {
@@ -16,7 +17,7 @@ class GoalCalendarViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var error: String?
     
-    private let authManager = AuthManager()
+    private let authManager = AuthManager.shared
     private let apiService = APIService.shared
     
     func loadGoals() {

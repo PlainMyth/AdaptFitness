@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import Combine
 
 @MainActor
 class MealViewModel: ObservableObject {
@@ -14,7 +15,7 @@ class MealViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var error: String?
     
-    private let authManager = AuthManager()
+    private let authManager = AuthManager.shared
     private let apiService = APIService.shared
     
     func loadMeals() {
@@ -87,7 +88,11 @@ class MealViewModel: ObservableObject {
     
     var mealsByType: [MealType: [Meal]] {
         Dictionary(grouping: meals) { meal in
-            meal.mealType ?? .other
+            if let mealTypeString = meal.mealType,
+               let mealType = MealType(rawValue: mealTypeString) {
+                return mealType
+            }
+            return .other
         }
     }
     

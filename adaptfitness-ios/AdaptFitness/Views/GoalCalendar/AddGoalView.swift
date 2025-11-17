@@ -9,7 +9,7 @@ import SwiftUI
 
 struct AddGoalView: View {
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var authManager = AuthManager()
+    @ObservedObject private var authManager = AuthManager.shared
     
     @State private var selectedGoalType: GoalType = .workoutsCount
     @State private var targetValue = ""

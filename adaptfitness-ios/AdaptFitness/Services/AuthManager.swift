@@ -7,38 +7,53 @@
 
 import Foundation
 import SwiftUI
+import Combine
 
 @MainActor
 class AuthManager: ObservableObject {
+    static let shared = AuthManager()
+    
     @Published var isAuthenticated = false
     @Published var currentUser: User?
     @Published var authToken: String?
+    @Published var isLoading = false
+    @Published var errorMessage: String?
     
     private let userDefaults = UserDefaults.standard
     private let tokenKey = "auth_token"
     private let userKey = "current_user"
     
-    init() {
+    private init() {
         loadStoredAuth()
     }
     
-    func login(email: String, password: String) async {
+    func login(email: String, password: String) async throws {
+        isLoading = true
+        errorMessage = nil
+        
         do {
             let response = try await APIService.shared.login(email: email, password: password)
             await setAuthData(user: response.user, token: response.accessToken)
+            isLoading = false
         } catch {
-            print("Login failed: \(error)")
-            // Handle login error
+            isLoading = false
+            errorMessage = error.localizedDescription
+            throw error
         }
     }
     
-    func register(user: RegisterRequest) async {
+    func register(user: RegisterRequest) async throws {
+        isLoading = true
+        errorMessage = nil
+        
         do {
             let response = try await APIService.shared.register(user: user)
             await setAuthData(user: response.user, token: response.accessToken)
+            isLoading = false
         } catch {
-            print("Registration failed: \(error)")
-            // Handle registration error
+            isLoading = false
+            errorMessage = error.localizedDescription
+            throw error
         }
     }
     

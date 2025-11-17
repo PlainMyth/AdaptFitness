@@ -10,7 +10,7 @@ import SwiftUI
 struct WorkoutListView: View {
     @StateObject private var viewModel = WorkoutViewModel()
     @State private var showingAddWorkout = false
-    @State private var selectedWorkout: Workout?
+    @State private var selectedWorkout: WorkoutResponse?
     
     var body: some View {
         NavigationView {
@@ -62,32 +62,39 @@ struct WorkoutListView: View {
             }
             .sheet(isPresented: $showingAddWorkout) {
                 AddWorkoutView { newWorkout in
-                    viewModel.addWorkout(newWorkout)
+                    Task {
+                        await viewModel.fetchWorkouts()
+                    }
                 }
             }
             .sheet(item: $selectedWorkout) { workout in
                 WorkoutDetailView(workout: workout)
             }
         }
-        .onAppear {
-            viewModel.loadWorkouts()
+        .task {
+            await viewModel.fetchWorkouts()
+            await viewModel.fetchCurrentStreak()
         }
     }
     
     private func deleteWorkouts(offsets: IndexSet) {
-        withAnimation {
-            viewModel.deleteWorkouts(at: offsets)
+        Task {
+            for index in offsets {
+                let workout = viewModel.workouts[index]
+                try? await viewModel.deleteWorkout(id: workout.id)
+            }
+            await viewModel.fetchWorkouts()
         }
     }
 }
 
 struct WorkoutRowView: View {
-    let workout: Workout
+    let workout: WorkoutResponse
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Image(systemName: workout.workoutType?.icon ?? "figure.mixed.cardio")
+                Image(systemName: "figure.mixed.cardio")
                     .foregroundColor(.blue)
                     .frame(width: 20)
                 
@@ -107,47 +114,29 @@ struct WorkoutRowView: View {
                 Spacer()
                 
                 VStack(alignment: .trailing, spacing: 2) {
-                    Text("\(Int(workout.totalDuration))m")
-                        .font(.caption)
-                        .fontWeight(.medium)
+                    if let duration = workout.totalDuration {
+                        Text("\(duration)m")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                    }
                     
-                    Text("\(Int(workout.totalCaloriesBurned)) cal")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
+                    if let calories = workout.totalCaloriesBurned {
+                        Text("\(Int(calories)) cal")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
                 }
             }
             
             HStack {
-                if let workoutType = workout.workoutType {
-                    Text(workoutType.displayName)
-                        .font(.caption)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 2)
-                        .background(Color.blue.opacity(0.1))
-                        .foregroundColor(.blue)
-                        .cornerRadius(4)
-                }
-                
                 Spacer()
                 
-                Text(workout.status.capitalized)
+                Text(workout.formattedDate)
                     .font(.caption)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 2)
-                    .background(statusColor.opacity(0.1))
-                    .foregroundColor(statusColor)
-                    .cornerRadius(4)
+                    .foregroundColor(.secondary)
             }
         }
         .padding(.vertical, 4)
-    }
-    
-    private var statusColor: Color {
-        switch workout.status {
-        case "completed": return .green
-        case "in_progress": return .orange
-        default: return .gray
-        }
     }
 }
 

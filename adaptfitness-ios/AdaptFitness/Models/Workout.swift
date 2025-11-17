@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Combine
 
 struct Workout: Codable, Identifiable {
     let id: String

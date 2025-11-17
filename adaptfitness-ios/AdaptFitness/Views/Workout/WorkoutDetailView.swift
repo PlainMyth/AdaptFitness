@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct WorkoutDetailView: View {
-    let workout: Workout
+    let workout: WorkoutResponse
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -18,7 +18,7 @@ struct WorkoutDetailView: View {
                     // Header
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
-                            Image(systemName: workout.workoutType?.icon ?? "figure.mixed.cardio")
+                            Image(systemName: "figure.mixed.cardio")
                                 .font(.title)
                                 .foregroundColor(.blue)
                             
@@ -26,12 +26,6 @@ struct WorkoutDetailView: View {
                                 Text(workout.name)
                                     .font(.title2)
                                     .fontWeight(.bold)
-                                
-                                if let workoutType = workout.workoutType {
-                                    Text(workoutType.displayName)
-                                        .font(.subheadline)
-                                        .foregroundColor(.secondary)
-                                }
                             }
                             
                             Spacer()
@@ -49,53 +43,25 @@ struct WorkoutDetailView: View {
                     
                     // Stats Grid
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 16) {
-                        StatCard(
-                            title: "Duration",
-                            value: "\(Int(workout.totalDuration))",
-                            unit: "minutes",
-                            icon: "clock.fill",
-                            color: .blue
-                        )
+                        if let duration = workout.totalDuration {
+                            StatCard(
+                                title: "Duration",
+                                value: "\(duration)",
+                                unit: "minutes",
+                                icon: "clock.fill",
+                                color: .blue
+                            )
+                        }
                         
-                        StatCard(
-                            title: "Calories",
-                            value: "\(Int(workout.totalCaloriesBurned))",
-                            unit: "burned",
-                            icon: "flame.fill",
-                            color: .orange
-                        )
-                        
-                        StatCard(
-                            title: "Sets",
-                            value: "\(Int(workout.totalSets))",
-                            unit: "completed",
-                            icon: "number.circle.fill",
-                            color: .green
-                        )
-                        
-                        StatCard(
-                            title: "Reps",
-                            value: "\(Int(workout.totalReps))",
-                            unit: "total",
-                            icon: "repeat.circle.fill",
-                            color: .purple
-                        )
-                        
-                        StatCard(
-                            title: "Weight",
-                            value: "\(Int(workout.totalWeight))",
-                            unit: "kg lifted",
-                            icon: "scalemass.fill",
-                            color: .red
-                        )
-                        
-                        StatCard(
-                            title: "Status",
-                            value: workout.status.capitalized,
-                            unit: "",
-                            icon: statusIcon,
-                            color: statusColor
-                        )
+                        if let calories = workout.totalCaloriesBurned {
+                            StatCard(
+                                title: "Calories",
+                                value: "\(Int(calories))",
+                                unit: "burned",
+                                icon: "flame.fill",
+                                color: .orange
+                            )
+                        }
                     }
                     
                     // Timing Information
@@ -146,26 +112,7 @@ struct WorkoutDetailView: View {
         }
     }
     
-    private var statusIcon: String {
-        switch workout.status {
-        case "completed": return "checkmark.circle.fill"
-        case "in_progress": return "clock.fill"
-        default: return "calendar.circle.fill"
-        }
-    }
-    
-    private var statusColor: Color {
-        switch workout.status {
-        case "completed": return .green
-        case "in_progress": return .orange
-        default: return .gray
-        }
-    }
-    
-    private func formatDate(_ dateString: String) -> String {
-        let formatter = ISO8601DateFormatter()
-        guard let date = formatter.date(from: dateString) else { return dateString }
-        
+    private func formatDate(_ date: Date) -> String {
         let displayFormatter = DateFormatter()
         displayFormatter.dateStyle = .medium
         displayFormatter.timeStyle = .short
@@ -210,22 +157,18 @@ struct StatCard: View {
 }
 
 #Preview {
-    let sampleWorkout = Workout(
+    let sampleWorkout = WorkoutResponse(
         id: "1",
         name: "Upper Body Strength",
         description: "Chest, shoulders, and arms workout",
-        startTime: "2025-10-15T10:00:00Z",
-        endTime: "2025-10-15T11:00:00Z",
+        startTime: Date(),
+        endTime: Date().addingTimeInterval(3600),
         totalCaloriesBurned: 400,
         totalDuration: 60,
-        totalSets: 15,
-        totalReps: 120,
-        totalWeight: 2500,
-        workoutType: .strength,
-        isCompleted: true,
+        notes: nil,
         userId: "user1",
-        createdAt: "2025-10-15T10:00:00Z",
-        updatedAt: "2025-10-15T11:00:00Z"
+        createdAt: Date(),
+        updatedAt: Date()
     )
     
     WorkoutDetailView(workout: sampleWorkout)

@@ -341,8 +341,8 @@ struct CreateWorkoutView: View {
     private func saveWorkout() {
         isSubmitting = true
         
-        let caloriesValue = Double(calories)
-        let durationValue = Int(duration)
+        let caloriesValue = Double(calories) ?? 0
+        let durationValue = Double(duration) ?? 0
         
         Task {
             do {
@@ -353,7 +353,11 @@ struct CreateWorkoutView: View {
                     endTime: nil,
                     totalCaloriesBurned: caloriesValue,
                     totalDuration: durationValue,
-                    notes: notes.isEmpty ? nil : notes
+                    totalSets: 0,
+                    totalReps: 0,
+                    totalWeight: 0,
+                    workoutType: nil,
+                    isCompleted: true
                 )
                 dismiss()
             } catch let error as NetworkError {

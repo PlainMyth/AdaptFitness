@@ -174,9 +174,6 @@ struct HomeView: View {
                     }
                 }
             }
-            
-            // Footer Tabs
-            FooterTabBar()
         }
     }
 }

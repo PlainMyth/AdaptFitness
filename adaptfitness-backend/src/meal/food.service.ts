@@ -72,7 +72,7 @@ export class FoodService {
       }
 
       const foods = response.data.products
-        .filter(product => product.product_name && product.nutriments)
+        .filter(product => product.product_name) // Only require product name, not complete nutrition
         .map(product => this.mapToSimplifiedFoodItem(product))
         .filter(food => food !== null);
 
@@ -159,27 +159,95 @@ export class FoodService {
    */
   private mapToSimplifiedFoodItem(product: FoodItemDto): SimplifiedFoodItemDto | null {
     try {
-      if (!product.product_name || !product.nutriments) {
+      if (!product.product_name) {
         return null;
       }
 
-      const nutriments = product.nutriments;
+      const nutriments = product.nutriments || {};
       
-      // Get nutrition per 100g
+      // OpenFoodFacts can have calories in different formats:
+      // - energy_kcal_100g (preferred)
+      // - energy-kcal_100g (with dash)
+      // - energy_100g (in kJ, need to convert: 1 kcal = 4.184 kJ)
+      // - energy (in kJ per serving)
+      // Check all possible field names dynamically
+      let calories = 0;
+      
+      // Try all possible calorie field names
+      const calorieFields = [
+        'energy_kcal_100g',
+        'energy-kcal_100g',
+        'energy-kcal-100g',
+        'energy_kcal100g',
+        'energy_kcal',
+        'energy_kcal_serving',
+        'energy-kcal',
+      ];
+      
+      for (const field of calorieFields) {
+        if (nutriments[field] != null && nutriments[field] > 0) {
+          calories = nutriments[field];
+          break;
+        }
+      }
+      
+      // If no kcal found, try kJ fields and convert
+      if (calories === 0) {
+        const energyFields = [
+          'energy_100g',
+          'energy-100g',
+          'energy_100g_value',
+          'energy',
+          'energy_value',
+        ];
+        
+        for (const field of energyFields) {
+          if (nutriments[field] != null && nutriments[field] > 0) {
+            // Convert from kJ to kcal (1 kcal = 4.184 kJ)
+            let energyKJ = nutriments[field];
+            
+            // If it's per serving and we have serving quantity, calculate per 100g
+            if (field === 'energy' && product.serving_quantity) {
+              const servingQty = typeof product.serving_quantity === 'string' 
+                ? parseFloat(product.serving_quantity) 
+                : product.serving_quantity;
+              if (servingQty && !isNaN(servingQty) && servingQty > 0) {
+                energyKJ = (nutriments[field] / servingQty) * 100;
+              }
+            }
+            
+            calories = energyKJ / 4.184;
+            break;
+          }
+        }
+      }
+      
+      // Log if calories are 0 but product has other nutrition data (for debugging)
+      if (calories === 0 && Object.keys(nutriments).length > 0) {
+        console.log(`Warning: Product "${product.product_name}" has no calories. Available nutriment keys:`, Object.keys(nutriments).slice(0, 10));
+      }
+      
+      // Get nutrition per 100g - allow products without complete nutrition data
       const nutritionPer100g = {
-        calories: nutriments.energy_kcal_100g || 0,
-        protein: nutriments.proteins_100g || 0,
-        carbs: nutriments.carbohydrates_100g || 0,
-        fat: nutriments.fat_100g || 0,
-        fiber: nutriments.fiber_100g,
-        sugar: nutriments.sugars_100g,
-        sodium: nutriments.sodium_100g ? nutriments.sodium_100g * 1000 : undefined, // Convert to mg
+        calories: calories || 0,
+        protein: nutriments['proteins_100g'] || nutriments['proteins-100g'] || 0,
+        carbs: nutriments['carbohydrates_100g'] || nutriments['carbohydrates-100g'] || 0,
+        fat: nutriments['fat_100g'] || nutriments['fat-100g'] || 0,
+        fiber: nutriments['fiber_100g'] || nutriments['fiber-100g'] || undefined,
+        sugar: nutriments['sugars_100g'] || nutriments['sugars-100g'] || undefined,
+        sodium: (nutriments['sodium_100g'] || nutriments['sodium-100g']) 
+          ? (nutriments['sodium_100g'] || nutriments['sodium-100g']) * 1000 
+          : undefined, // Convert to mg
       };
 
       // Calculate nutrition per serving if serving size is available
       let nutritionPerServing: SimplifiedFoodItemDto['nutritionPerServing'] | undefined;
-      if (product.serving_quantity && product.serving_quantity > 0) {
-        const servingMultiplier = product.serving_quantity / 100; // Convert to per serving
+      if (product.serving_quantity) {
+        const servingQty = typeof product.serving_quantity === 'string' 
+          ? parseFloat(product.serving_quantity) 
+          : product.serving_quantity;
+        if (servingQty && !isNaN(servingQty) && servingQty > 0) {
+          const servingMultiplier = servingQty / 100; // Convert to per serving
         nutritionPerServing = {
           calories: Math.round(nutritionPer100g.calories * servingMultiplier),
           protein: Number((nutritionPer100g.protein * servingMultiplier).toFixed(1)),
@@ -189,6 +257,16 @@ export class FoodService {
           sugar: nutritionPer100g.sugar ? Number((nutritionPer100g.sugar * servingMultiplier).toFixed(1)) : undefined,
           sodium: nutritionPer100g.sodium ? Math.round(nutritionPer100g.sodium * servingMultiplier) : undefined,
         };
+        }
+      }
+
+      // Ensure servingSize is always a number or undefined (not string or null)
+      let servingSize: number | undefined;
+      if (product.serving_quantity != null) {
+        const quantity = typeof product.serving_quantity === 'string' 
+          ? parseFloat(product.serving_quantity) 
+          : product.serving_quantity;
+        servingSize = isNaN(quantity) || quantity <= 0 ? undefined : quantity;
       }
 
       return {
@@ -197,7 +275,7 @@ export class FoodService {
         brand: product.brands,
         category: product.categories?.split(',')[0]?.trim(),
         imageUrl: product.image_url,
-        servingSize: product.serving_quantity,
+        servingSize: servingSize,
         servingUnit: product.serving_size || 'g',
         nutritionPer100g,
         nutritionPerServing,

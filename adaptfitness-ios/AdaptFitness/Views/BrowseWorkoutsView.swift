@@ -7,25 +7,17 @@
 
 import SwiftUI
 
-//struct Workout: Identifiable {
-//    let id = UUID()
-//    let name: String
-//    let intensity: String
-//    let calories: String
-//    let systemImage: String
-//}
-
 struct BrowseWorkoutsView: View {
     
-    let workouts: [Workout] = [
-        Workout(name: "Add Custom Workout", intensity: "", calories: "", systemImage: "plus.circle"),
-        Workout(name: "Running", intensity: "High", calories: "352 per 30 min", systemImage: "figure.run"),
-        Workout(name: "Walking", intensity: "Low", calories: "150 per 30 min", systemImage: "figure.walk"),
-        Workout(name: "Swimming", intensity: "High", calories: "215 per 30 min", systemImage: "drop.fill"),
-        Workout(name: "Cycling", intensity: "Low-High", calories: "225 per 30 min", systemImage: "bicycle"),
-        Workout(name: "Hiking", intensity: "Low-Moderate", calories: "180 per 30 min", systemImage: "figure.hiking"),
-        Workout(name: "Yoga", intensity: "Low-High", calories: "173 per 30 min", systemImage: "figure.cooldown"),
-        Workout(name: "Boxing", intensity: "High", calories: "400 per 30 min", systemImage: "figure.boxing")
+    let workoutTemplates: [WorkoutTemplate] = [
+        WorkoutTemplate(name: "Add Custom Workout", intensity: "", calories: "", systemImage: "plus.circle"),
+        WorkoutTemplate(name: "Running", intensity: "High", calories: "352 per 30 min", systemImage: "figure.run"),
+        WorkoutTemplate(name: "Walking", intensity: "Low", calories: "150 per 30 min", systemImage: "figure.walk"),
+        WorkoutTemplate(name: "Swimming", intensity: "High", calories: "215 per 30 min", systemImage: "drop.fill"),
+        WorkoutTemplate(name: "Cycling", intensity: "Low-High", calories: "225 per 30 min", systemImage: "bicycle"),
+        WorkoutTemplate(name: "Hiking", intensity: "Low-Moderate", calories: "180 per 30 min", systemImage: "figure.hiking"),
+        WorkoutTemplate(name: "Yoga", intensity: "Low-High", calories: "173 per 30 min", systemImage: "figure.cooldown"),
+        WorkoutTemplate(name: "Boxing", intensity: "High", calories: "400 per 30 min", systemImage: "figure.boxing")
     ]
     
     var body: some View {
@@ -58,8 +50,8 @@ struct BrowseWorkoutsView: View {
             
             ScrollView {
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 20) {
-                    ForEach(workouts) { workout in
-                        WorkoutTile(workout: workout)
+                    ForEach(workoutTemplates) { template in
+                        WorkoutTemplateTile(template: template)
                     }
                 }
                 .padding()
@@ -73,26 +65,26 @@ struct BrowseWorkoutsView: View {
     }
 }
 
-struct WorkoutTile: View {
-    let workout: Workout
+struct WorkoutTemplateTile: View {
+    let template: WorkoutTemplate
     
     var body: some View {
         VStack(spacing: 10) {
-            Image(systemName: workout.systemImage)
+            Image(systemName: template.systemImage)
                 .resizable()
                 .scaledToFit()
                 .frame(height: 60)
                 .padding()
             
-            Text(workout.name)
+            Text(template.name)
                 .font(.headline)
             
-            if !workout.intensity.isEmpty {
-                Text("Intensity: \(workout.intensity)")
+            if !template.intensity.isEmpty {
+                Text("Intensity: \(template.intensity)")
                     .font(.subheadline)
             }
-            if !workout.calories.isEmpty {
-                Text("Est Cal: \(workout.calories)")
+            if !template.calories.isEmpty {
+                Text("Est Cal: \(template.calories)")
                     .font(.subheadline)
             }
         }

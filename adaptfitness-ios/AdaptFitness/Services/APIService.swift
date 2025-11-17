@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Combine
 
 class APIService: ObservableObject {
     static let shared = APIService()
@@ -80,6 +81,36 @@ class APIService: ObservableObject {
         )
     }
     
+    func updateWorkout(id: String, workout: CreateWorkoutRequest, token: String) async throws -> Workout {
+        return try await performAuthenticatedRequest(
+            endpoint: "/workouts/\(id)",
+            method: "PUT",
+            body: workout,
+            token: token,
+            responseType: Workout.self
+        )
+    }
+    
+    func deleteWorkout(id: String, token: String) async throws -> Void {
+        guard let url = URL(string: baseURL + "/workouts/\(id)") else {
+            throw APIError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        let (_, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        guard httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 else {
+            throw APIError.httpError(httpResponse.statusCode)
+        }
+    }
+    
     // MARK: - Meals
     
     func getMeals(token: String) async throws -> [Meal] {
@@ -129,14 +160,50 @@ class APIService: ObservableObject {
             throw APIError.invalidResponse
         }
         
-        guard httpResponse.statusCode == 200 else {
+        guard httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 else {
             throw APIError.httpError(httpResponse.statusCode)
         }
         
         do {
+            // Log raw response for debugging (first 500 chars)
+            if let jsonString = String(data: data, encoding: .utf8) {
+                print("Food search response: \(jsonString.prefix(500))")
+            }
+            
             let decoder = JSONDecoder()
-            return try decoder.decode(FoodSearchResponse.self, from: data)
+            // Backend returns camelCase, so no conversion needed
+            let response = try decoder.decode(FoodSearchResponse.self, from: data)
+            
+            // Validate response structure
+            print("Decoded successfully. Found \(response.foods.count) foods, totalCount: \(response.totalCount)")
+            
+            return response
+        } catch let decodingError as DecodingError {
+            // Log more details about the decoding error for debugging
+            let errorMessage: String
+            switch decodingError {
+            case .typeMismatch(let type, let context):
+                errorMessage = "Type mismatch: expected \(type) at \(context.codingPath.map { $0.stringValue }.joined(separator: "."))"
+            case .valueNotFound(let type, let context):
+                errorMessage = "Value not found: expected \(type) at \(context.codingPath.map { $0.stringValue }.joined(separator: "."))"
+            case .keyNotFound(let key, let context):
+                errorMessage = "Key not found: \(key.stringValue) at \(context.codingPath.map { $0.stringValue }.joined(separator: "."))"
+            case .dataCorrupted(let context):
+                errorMessage = "Data corrupted: \(context.debugDescription)"
+            @unknown default:
+                errorMessage = "Decoding error: \(decodingError.localizedDescription)"
+            }
+            
+            // Log the raw response for debugging
+            if let jsonString = String(data: data, encoding: .utf8) {
+                print("❌ Failed to decode food search response")
+                print("Raw JSON (first 1000 chars): \(jsonString.prefix(1000))")
+            }
+            print("Decoding error details: \(errorMessage)")
+            
+            throw APIError.decodingError
         } catch {
+            print("Unexpected error decoding food search: \(error)")
             throw APIError.decodingError
         }
     }
@@ -233,7 +300,7 @@ class APIService: ObservableObject {
             throw APIError.invalidResponse
         }
         
-        guard httpResponse.statusCode == 200 else {
+        guard httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 else {
             throw APIError.httpError(httpResponse.statusCode)
         }
         
@@ -271,13 +338,39 @@ class APIService: ObservableObject {
             throw APIError.invalidResponse
         }
         
-        guard httpResponse.statusCode == 200 else {
+        guard httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 else {
             throw APIError.httpError(httpResponse.statusCode)
         }
         
         do {
             let decoder = JSONDecoder()
+            // Backend returns camelCase for most responses
+            // Use convertFromSnakeCase only if backend uses snake_case
+            decoder.keyDecodingStrategy = .useDefaultKeys
             return try decoder.decode(responseType, from: data)
+        } catch let decodingError as DecodingError {
+            // Log more details about the decoding error for debugging
+            let errorMessage: String
+            switch decodingError {
+            case .typeMismatch(let type, let context):
+                errorMessage = "Type mismatch: expected \(type) at \(context.codingPath.map { $0.stringValue }.joined(separator: "."))"
+            case .valueNotFound(let type, let context):
+                errorMessage = "Value not found: expected \(type) at \(context.codingPath.map { $0.stringValue }.joined(separator: "."))"
+            case .keyNotFound(let key, let context):
+                errorMessage = "Key not found: \(key.stringValue) at \(context.codingPath.map { $0.stringValue }.joined(separator: "."))"
+            case .dataCorrupted(let context):
+                errorMessage = "Data corrupted: \(context.debugDescription)"
+            @unknown default:
+                errorMessage = "Decoding error: \(decodingError.localizedDescription)"
+            }
+            
+            // Log the raw response for debugging
+            if let jsonString = String(data: data, encoding: .utf8) {
+                print("Failed to decode response. Raw JSON: \(jsonString.prefix(1000))")
+            }
+            print("Decoding error details: \(errorMessage)")
+            
+            throw APIError.decodingError
         } catch {
             throw APIError.decodingError
         }
@@ -303,13 +396,39 @@ class APIService: ObservableObject {
             throw APIError.invalidResponse
         }
         
-        guard httpResponse.statusCode == 200 else {
+        guard httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 else {
             throw APIError.httpError(httpResponse.statusCode)
         }
         
         do {
             let decoder = JSONDecoder()
+            // Backend returns camelCase for most responses
+            // Use convertFromSnakeCase only if backend uses snake_case
+            decoder.keyDecodingStrategy = .useDefaultKeys
             return try decoder.decode(responseType, from: data)
+        } catch let decodingError as DecodingError {
+            // Log more details about the decoding error for debugging
+            let errorMessage: String
+            switch decodingError {
+            case .typeMismatch(let type, let context):
+                errorMessage = "Type mismatch: expected \(type) at \(context.codingPath.map { $0.stringValue }.joined(separator: "."))"
+            case .valueNotFound(let type, let context):
+                errorMessage = "Value not found: expected \(type) at \(context.codingPath.map { $0.stringValue }.joined(separator: "."))"
+            case .keyNotFound(let key, let context):
+                errorMessage = "Key not found: \(key.stringValue) at \(context.codingPath.map { $0.stringValue }.joined(separator: "."))"
+            case .dataCorrupted(let context):
+                errorMessage = "Data corrupted: \(context.debugDescription)"
+            @unknown default:
+                errorMessage = "Decoding error: \(decodingError.localizedDescription)"
+            }
+            
+            // Log the raw response for debugging
+            if let jsonString = String(data: data, encoding: .utf8) {
+                print("Failed to decode response. Raw JSON: \(jsonString.prefix(1000))")
+            }
+            print("Decoding error details: \(errorMessage)")
+            
+            throw APIError.decodingError
         } catch {
             throw APIError.decodingError
         }

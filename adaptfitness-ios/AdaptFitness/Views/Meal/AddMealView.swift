@@ -9,7 +9,7 @@ import SwiftUI
 
 struct AddMealView: View {
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var authManager = AuthManager()
+    @ObservedObject private var authManager = AuthManager.shared
     
     @State private var name = ""
     @State private var description = ""
@@ -144,13 +144,13 @@ struct AddMealView: View {
             description: description.isEmpty ? nil : description,
             mealTime: formatter.string(from: mealTime),
             totalCalories: Double(calories) ?? 0,
+            mealType: selectedMealType?.rawValue,
             totalProtein: protein.isEmpty ? nil : Double(protein),
             totalCarbs: carbs.isEmpty ? nil : Double(carbs),
             totalFat: fat.isEmpty ? nil : Double(fat),
             totalFiber: fiber.isEmpty ? nil : Double(fiber),
             totalSugar: sugar.isEmpty ? nil : Double(sugar),
             totalSodium: sodium.isEmpty ? nil : Double(sodium),
-            mealType: selectedMealType,
             servingSize: nil,
             servingUnit: nil
         )
