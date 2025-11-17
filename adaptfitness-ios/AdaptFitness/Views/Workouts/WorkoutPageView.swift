@@ -162,27 +162,21 @@ struct WorkoutPageView: View {
         }
         
         let filteredMeals = mealViewModel.meals.filter { meal in
-            if let mealTime = meal.mealTime {
-                let formatter = ISO8601DateFormatter()
-                guard let mealDate = formatter.date(from: mealTime) else { return false }
+            if let mealDate = meal.date {
                 return mealDate >= startDate
-            } else {
-                return meal.date >= startDate
             }
+            return false
         }
         
         let grouped = Dictionary(grouping: filteredMeals) { meal -> Date in
-            if let mealTime = meal.mealTime {
-                let formatter = ISO8601DateFormatter()
-                if let date = formatter.date(from: mealTime) {
-                    return calendar.startOfDay(for: date)
-                }
+            if let mealDate = meal.date {
+                return calendar.startOfDay(for: mealDate)
             }
-            return calendar.startOfDay(for: meal.date)
+            return calendar.startOfDay(for: Date())
         }
         
         return grouped.map { date, meals in
-            let totalCalories = meals.reduce(0) { $0 + ($1.totalCalories ?? 0) }
+            let totalCalories = meals.reduce(0) { $0 + $1.totalCalories }
             return CalorieDataPoint(date: date, calories: totalCalories)
         }.sorted { $0.date < $1.date }
     }

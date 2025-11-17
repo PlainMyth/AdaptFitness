@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct BrowseWorkoutsView: View {
+    @State private var selectedTab: FooterTabBar.Tab = .browse
     
     let workoutTemplates: [WorkoutTemplate] = [
         WorkoutTemplate(name: "Add Custom Workout", intensity: "", calories: "", systemImage: "plus.circle"),
@@ -60,7 +61,7 @@ struct BrowseWorkoutsView: View {
             Spacer()
             
             // Footer buttons
-            FooterTabBar()
+            FooterTabBar(selectedTab: $selectedTab)
         }
     }
 }

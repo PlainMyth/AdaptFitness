@@ -121,41 +121,6 @@ struct WorkoutDetailView: View {
     }
 }
 
-struct StatCard: View {
-    let title: String
-    let value: String
-    let unit: String
-    let icon: String
-    let color: Color
-    
-    var body: some View {
-        VStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.title2)
-                .foregroundColor(color)
-            
-            VStack(spacing: 2) {
-                Text(value)
-                    .font(.title3)
-                    .fontWeight(.bold)
-                
-                Text(unit)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            
-            Text(title)
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
-        .padding()
-        .background(Color(.systemGray6))
-        .cornerRadius(12)
-    }
-}
-
 #Preview {
     let sampleWorkout = WorkoutResponse(
         id: "1",

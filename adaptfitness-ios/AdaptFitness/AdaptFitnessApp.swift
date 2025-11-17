@@ -27,13 +27,13 @@ struct AdaptFitnessApp: App {
 
     var body: some Scene {
         WindowGroup {
-            // Show HomePageView first (matches main branch structure)
-            // HomePageView uses FooterTabBar for navigation, not standard TabView
-            HomePageView(
-                isLoggedIn: .constant(true),
-                user: User.exampleUser
-            )
+            if authManager.isAuthenticated {
+                ContentView()
+            } else {
+                LoginView()
+            }
         }
         .modelContainer(sharedModelContainer)
+        .environmentObject(authManager)
     }
 }

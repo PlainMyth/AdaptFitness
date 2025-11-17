@@ -9,11 +9,14 @@
  * 
  * Development: Higher limits for easier testing
  * Production: Stricter limits for security
+ * Localhost: Very lenient limits for local development
  */
 
 import { ThrottlerModuleOptions } from '@nestjs/throttler';
 
 const isDevelopment = process.env.NODE_ENV === 'development';
+// For localhost, be very lenient with rate limiting
+const isLocalhost = process.env.PORT === '3000' || !process.env.PORT;
 
 /**
  * Global rate limiting configuration
@@ -22,7 +25,7 @@ const isDevelopment = process.env.NODE_ENV === 'development';
 export const throttlerConfig: ThrottlerModuleOptions = [
   {
     ttl: 60000,  // Time window in milliseconds (60 seconds = 1 minute)
-    limit: isDevelopment ? 100 : 10,   // Higher limit in development for testing
+    limit: isLocalhost ? 1000 : isDevelopment ? 100 : 10,   // Very high limit for localhost, higher for dev, normal for production
   },
 ];
 
@@ -31,7 +34,7 @@ export const throttlerConfig: ThrottlerModuleOptions = [
  * Prevents brute force attacks on login/registration
  */
 export const authThrottlerConfig = {
-  ttl: isDevelopment ? 60000 : 900000,  // 1 minute in dev, 15 minutes in production
-  limit: isDevelopment ? 50 : 5,         // 50 attempts per minute in dev, 5 per 15 min in production
+  ttl: isLocalhost ? 60000 : isDevelopment ? 60000 : 900000,  // 1 minute for localhost/dev, 15 minutes in production
+  limit: isLocalhost ? 200 : isDevelopment ? 50 : 5,         // 200 attempts per minute for localhost, 50 for dev, 5 per 15 min for production
 };
 
