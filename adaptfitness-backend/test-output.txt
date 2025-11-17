@@ -1,0 +1,21 @@
+
+> adaptfitness-backend@1.0.0 test
+> jest
+
+Jest global setup completed - Date.UTC polyfill loaded
+PASS src/health-metrics/dto/create-health-metrics.dto.spec.ts (8.59 s)
+PASS src/user/user.service.spec.ts (9.695 s)
+PASS src/workout/workout.service.spec.ts (9.847 s)
+PASS src/health-metrics/health-metrics.service.spec.ts (9.982 s)
+PASS src/auth/validators/password.validator.spec.ts
+PASS src/meal/meal.service.spec.ts (10.048 s)
+PASS src/app.service.spec.ts
+PASS src/workout/workout.integration.spec.ts (10.425 s)
+PASS src/health-metrics/health-metrics.controller.spec.ts
+PASS src/auth/auth.service.spec.ts (11.29 s)
+
+Test Suites: 10 passed, 10 total
+Tests:       148 passed, 148 total
+Snapshots:   0 total
+Time:        11.945 s, estimated 14 s
+Ran all test suites.

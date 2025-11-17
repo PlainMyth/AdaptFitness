@@ -8,7 +8,9 @@
 import SwiftUI
 
 struct FooterTabBar: View {
-    @State private var selectedTab: Tab = .home
+    @Binding var selectedTab: Tab
+    @State private var showingProfile = false
+    @StateObject private var authManager = AuthManager.shared
     
     enum Tab {
         case home, stats, calendar, browse
@@ -65,6 +67,21 @@ struct FooterTabBar: View {
             }
             
             Spacer()
+            
+            Button(action: { showingProfile = true }) {
+                VStack {
+                    Image(systemName: "person.fill")
+                        .font(.system(size: 20))
+                    Text("Profile")
+                        .font(.caption2)
+                }
+                .foregroundColor(.gray)
+            }
+            
+            Spacer()
+        }
+        .sheet(isPresented: $showingProfile) {
+            ProfileView()
         }
 
 //        .background(Color(UIColor.systemGray6))

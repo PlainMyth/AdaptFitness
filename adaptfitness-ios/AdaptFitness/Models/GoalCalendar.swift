@@ -120,6 +120,8 @@ struct CreateGoalRequest: Codable {
     let isActive: Bool
 }
 
+// GoalStatistics struct for API responses
+// Note: Not marked with @MainActor to allow decoding in non-isolated contexts
 struct GoalStatistics: Codable {
     let totalGoals: Int
     let completedGoals: Int

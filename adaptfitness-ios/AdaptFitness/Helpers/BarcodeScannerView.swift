@@ -2,7 +2,7 @@
 //  BarcodeScannerView.swift
 //  AdaptFitness
 //
-//  Created by AI Assistant on 10/16/25.
+//  Created by OzzieC8 on 10/16/25.
 //
 //  Native iOS barcode scanner using AVFoundation
 //
@@ -137,7 +137,40 @@ class BarcodeScannerViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupCaptureSession()
+        requestCameraPermission()
+    }
+    
+    private func requestCameraPermission() {
+        // Force permission request by checking status first
+        let status = AVCaptureDevice.authorizationStatus(for: .video)
+        print("Camera permission status: \(status.rawValue)")
+        
+        switch status {
+        case .authorized:
+            print("Camera already authorized")
+            setupCaptureSession()
+        case .notDetermined:
+            print("Requesting camera permission...")
+            AVCaptureDevice.requestAccess(for: .video) { granted in
+                print("Camera permission granted: \(granted)")
+                DispatchQueue.main.async {
+                    if granted {
+                        self.setupCaptureSession()
+                    } else {
+                        self.delegate?.scanningFailed(error: "Camera access denied. Please enable camera permissions in Settings.")
+                    }
+                }
+            }
+        case .denied:
+            print("Camera permission denied")
+            delegate?.scanningFailed(error: "Camera access denied. Please enable camera permissions in System Preferences > Security & Privacy > Camera.")
+        case .restricted:
+            print("Camera permission restricted")
+            delegate?.scanningFailed(error: "Camera access restricted. Please check parental controls or system restrictions.")
+        @unknown default:
+            print("Camera permission unknown status")
+            delegate?.scanningFailed(error: "Camera access error.")
+        }
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -164,62 +197,105 @@ class BarcodeScannerViewController: UIViewController {
         captureSession = AVCaptureSession()
         
         guard let session = captureSession else { return }
-        guard let videoCaptureDevice = AVCaptureDevice.default(for: .video) else {
-            delegate?.scanningFailed(error: "Camera not available")
+        
+        // Real camera setup for all devices (including macOS)
+        setupRealCamera(session: session)
+    }
+    
+    private func setupRealCamera(session: AVCaptureSession) {
+        // Find and use the real camera
+        var cameraDevice: AVCaptureDevice?
+        
+        // Try different camera detection methods
+        if let defaultDevice = AVCaptureDevice.default(for: .video) {
+            cameraDevice = defaultDevice
+            print("Found default camera: \(defaultDevice.localizedName)")
+        }
+        
+        // If no default camera, try discovery session
+        if cameraDevice == nil {
+            let discoverySession = AVCaptureDevice.DiscoverySession(
+                deviceTypes: [.builtInWideAngleCamera, .builtInUltraWideCamera, .builtInTelephotoCamera],
+                mediaType: .video,
+                position: .unspecified
+            )
+            
+            for device in discoverySession.devices {
+                print("Found camera: \(device.localizedName)")
+            }
+            
+            cameraDevice = discoverySession.devices.first
+        }
+        
+        // Try specific positions
+        if cameraDevice == nil {
+            cameraDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back)
+        }
+        
+        if cameraDevice == nil {
+            cameraDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front)
+        }
+        
+        guard let device = cameraDevice else {
+            delegate?.scanningFailed(error: "No camera found. Please check camera permissions in System Preferences > Security & Privacy > Camera.")
             return
         }
         
-        let videoInput: AVCaptureDeviceInput
+        print("Using camera: \(device.localizedName)")
         
         do {
-            videoInput = try AVCaptureDeviceInput(device: videoCaptureDevice)
-        } catch {
-            delegate?.scanningFailed(error: "Camera access denied")
-            return
-        }
-        
-        if session.canAddInput(videoInput) {
-            session.addInput(videoInput)
-        } else {
-            delegate?.scanningFailed(error: "Failed to add camera input")
-            return
-        }
-        
-        let metadataOutput = AVCaptureMetadataOutput()
-        
-        if session.canAddOutput(metadataOutput) {
-            session.addOutput(metadataOutput)
+            let videoInput = try AVCaptureDeviceInput(device: device)
             
-            metadataOutput.setMetadataObjectsDelegate(self, queue: DispatchQueue.main)
-            metadataOutput.metadataObjectTypes = [
-                .ean8,
-                .ean13,
-                .pdf417,
-                .qr,
-                .code128,
-                .code39,
-                .code93,
-                .upce,
-                .aztec,
-                .interleaved2of5,
-                .itf14,
-                .dataMatrix
-            ]
-        } else {
-            delegate?.scanningFailed(error: "Failed to add metadata output")
-            return
-        }
-        
-        previewLayer = AVCaptureVideoPreviewLayer(session: session)
-        previewLayer?.frame = view.layer.bounds
-        previewLayer?.videoGravity = .resizeAspectFill
-        
-        if let preview = previewLayer {
-            view.layer.addSublayer(preview)
-        }
-        
-        DispatchQueue.global(qos: .userInitiated).async {
-            session.startRunning()
+            if session.canAddInput(videoInput) {
+                session.addInput(videoInput)
+                print("Successfully added camera input")
+            } else {
+                delegate?.scanningFailed(error: "Cannot add camera input to capture session")
+                return
+            }
+            
+            let metadataOutput = AVCaptureMetadataOutput()
+            
+            if session.canAddOutput(metadataOutput) {
+                session.addOutput(metadataOutput)
+                
+                metadataOutput.setMetadataObjectsDelegate(self, queue: DispatchQueue.main)
+                metadataOutput.metadataObjectTypes = [
+                    .ean8,
+                    .ean13,
+                    .pdf417,
+                    .qr,
+                    .code128,
+                    .code39,
+                    .code93,
+                    .upce,
+                    .aztec,
+                    .interleaved2of5,
+                    .itf14,
+                    .dataMatrix
+                ]
+                print("Successfully added metadata output")
+            } else {
+                delegate?.scanningFailed(error: "Failed to add metadata output")
+                return
+            }
+            
+            previewLayer = AVCaptureVideoPreviewLayer(session: session)
+            previewLayer?.frame = view.layer.bounds
+            previewLayer?.videoGravity = .resizeAspectFill
+            
+            if let preview = previewLayer {
+                view.layer.addSublayer(preview)
+                print("Successfully added preview layer")
+            }
+            
+            DispatchQueue.global(qos: .userInitiated).async {
+                session.startRunning()
+                print("Camera session started")
+            }
+            
+        } catch {
+            delegate?.scanningFailed(error: "Failed to access camera: \(error.localizedDescription)")
         }
     }
     
