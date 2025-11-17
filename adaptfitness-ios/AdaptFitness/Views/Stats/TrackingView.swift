@@ -218,33 +218,27 @@ struct TrackingView: View {
         
         return mealViewModel.meals
             .filter { meal in
-                if let mealTime = meal.mealTime {
-                    let formatter = ISO8601DateFormatter()
-                    guard let mealDate = formatter.date(from: mealTime) else { return false }
+                if let mealDate = meal.date {
                     return mealDate >= startDate
-                } else {
-                    return meal.date >= startDate
                 }
+                return false
             }
-            .reduce(0) { $0 + ($1.totalCalories ?? 0) }
+            .reduce(0) { $0 + $1.totalCalories }
     }
     
     private var totalProtein: Double {
         mealViewModel.meals
-            .compactMap { $0.totalProtein }
-            .reduce(0, +)
+            .reduce(0) { $0 + $1.totalProtein }
     }
     
     private var totalCarbs: Double {
         mealViewModel.meals
-            .compactMap { $0.totalCarbs }
-            .reduce(0, +)
+            .reduce(0) { $0 + $1.totalCarbs }
     }
     
     private var totalFat: Double {
         mealViewModel.meals
-            .compactMap { $0.totalFat }
-            .reduce(0, +)
+            .reduce(0) { $0 + $1.totalFat }
     }
     
     // MARK: - Helper Methods

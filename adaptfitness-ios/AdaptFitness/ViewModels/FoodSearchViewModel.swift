@@ -62,10 +62,11 @@ class FoodSearchViewModel: ObservableObject {
             }
         } catch let error as APIError {
             switch error {
-            case .httpError(429):
+            case .httpError(429, _):
                 errorMessage = "Too many requests. Please wait a moment before searching again."
-            case .httpError(let code):
-                errorMessage = "Server error (code: \(code)). Please try again later."
+            case .httpError(let code, let message):
+                // Use custom message if available, otherwise provide default
+                errorMessage = message ?? "Server error (code: \(code)). Please try again later."
             case .decodingError:
                 errorMessage = "Could not process search results. Please try again or use manual entry."
             default:

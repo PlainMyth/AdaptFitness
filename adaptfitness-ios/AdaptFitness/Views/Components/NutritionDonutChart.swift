@@ -33,7 +33,7 @@ struct NutritionDonutChart: View {
         GeometryReader { geometry in
             let size = min(geometry.size.width, geometry.size.height)
             let lineWidth: CGFloat = size * 0.15
-            let radius = (size - lineWidth) / 2
+            let _ = (size - lineWidth) / 2 // radius - unused but kept for clarity
             
             ZStack {
                 // Protein (orange/brown)
@@ -89,7 +89,7 @@ struct SimpleDonutChart: View {
     var body: some View {
         GeometryReader { geometry in
             let size = min(geometry.size.width, geometry.size.height)
-            let radius = (size - lineWidth) / 2
+            let _ = (size - lineWidth) / 2 // radius - unused but kept for clarity
             
             ZStack {
                 // Background circle

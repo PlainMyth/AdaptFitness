@@ -92,7 +92,7 @@ struct MealRowView: View {
                     .frame(width: 20)
                 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(meal.name ?? "Unnamed Meal")
+                    Text(meal.name)
                         .font(.headline)
                         .lineLimit(1)
                     
@@ -107,7 +107,7 @@ struct MealRowView: View {
                 Spacer()
                 
                 VStack(alignment: .trailing, spacing: 2) {
-                    Text("\(Int(meal.totalCalories ?? 0)) cal")
+                    Text("\(Int(meal.totalCalories)) cal")
                         .font(.caption)
                         .fontWeight(.medium)
                     
@@ -133,12 +133,12 @@ struct MealRowView: View {
                 
                 Spacer()
                 
-                if let mealTime = meal.mealTime {
-                    Text(formatMealTime(mealTime))
+                if let mealDate = meal.date {
+                    Text(formatMealDate(mealDate))
                         .font(.caption)
                         .foregroundColor(.secondary)
                 } else {
-                    Text(formatMealDate(meal.date))
+                    Text(formatMealTime(meal.mealTime))
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }

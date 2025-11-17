@@ -100,14 +100,15 @@ class APIService: ObservableObject {
         request.httpMethod = "DELETE"
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         
-        let (_, response) = try await session.data(for: request)
+        let (data, response) = try await session.data(for: request)
         
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.invalidResponse
         }
         
         guard httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 else {
-            throw APIError.httpError(httpResponse.statusCode)
+            let errorMessage = extractErrorMessage(from: data, statusCode: httpResponse.statusCode)
+            throw APIError.httpError(httpResponse.statusCode, message: errorMessage)
         }
     }
     
@@ -161,7 +162,8 @@ class APIService: ObservableObject {
         }
         
         guard httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 else {
-            throw APIError.httpError(httpResponse.statusCode)
+            let errorMessage = extractErrorMessage(from: data, statusCode: httpResponse.statusCode)
+            throw APIError.httpError(httpResponse.statusCode, message: errorMessage)
         }
         
         do {
@@ -274,7 +276,81 @@ class APIService: ObservableObject {
         )
     }
     
+    // MARK: - Generic Request Method (for ViewModels)
+    
+    enum HTTPMethod: String {
+        case get = "GET"
+        case post = "POST"
+        case put = "PUT"
+        case delete = "DELETE"
+    }
+    
+    func request<T: Codable>(
+        endpoint: String,
+        method: HTTPMethod,
+        body: (any Codable)? = nil,
+        requiresAuth: Bool = true
+    ) async throws -> T {
+        guard let token = AuthManager.shared.authToken, requiresAuth else {
+            throw APIError.unauthorized
+        }
+        
+        if let body = body {
+            // Need to encode the body manually since we can't use generic constraint
+            guard let url = URL(string: baseURL + endpoint) else {
+                throw APIError.invalidURL
+            }
+            
+            var request = URLRequest(url: url)
+            request.httpMethod = method.rawValue
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            request.httpBody = try JSONEncoder().encode(body)
+            
+            let (data, response) = try await session.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw APIError.invalidResponse
+            }
+            
+            guard httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 else {
+                let errorMessage = extractErrorMessage(from: data, statusCode: httpResponse.statusCode)
+                throw APIError.httpError(httpResponse.statusCode, message: errorMessage)
+            }
+            
+            let decoder = JSONDecoder()
+            decoder.keyDecodingStrategy = .useDefaultKeys
+            return try decoder.decode(T.self, from: data)
+        } else {
+            return try await performAuthenticatedRequest(
+                endpoint: endpoint,
+                method: method.rawValue,
+                token: token,
+                responseType: T.self
+            )
+        }
+    }
+    
     // MARK: - Private Helper Methods
+    
+    private func extractErrorMessage(from data: Data, statusCode: Int) -> String? {
+        // Try to extract error message from response body
+        if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            // Try common error message fields
+            if let message = json["message"] as? String {
+                return message
+            }
+            if let error = json["error"] as? String {
+                return error
+            }
+            // For NestJS ConflictException, message might be in nested structure
+            if let errorObj = json["error"] as? [String: Any],
+               let message = errorObj["message"] as? String {
+                return message
+            }
+        }
+        return nil
+    }
     
     private func performRequest<T: Codable, R: Codable>(
         endpoint: String,
@@ -301,7 +377,8 @@ class APIService: ObservableObject {
         }
         
         guard httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 else {
-            throw APIError.httpError(httpResponse.statusCode)
+            let errorMessage = extractErrorMessage(from: data, statusCode: httpResponse.statusCode)
+            throw APIError.httpError(httpResponse.statusCode, message: errorMessage)
         }
         
         do {
@@ -339,7 +416,8 @@ class APIService: ObservableObject {
         }
         
         guard httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 else {
-            throw APIError.httpError(httpResponse.statusCode)
+            let errorMessage = extractErrorMessage(from: data, statusCode: httpResponse.statusCode)
+            throw APIError.httpError(httpResponse.statusCode, message: errorMessage)
         }
         
         do {
@@ -397,7 +475,8 @@ class APIService: ObservableObject {
         }
         
         guard httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 else {
-            throw APIError.httpError(httpResponse.statusCode)
+            let errorMessage = extractErrorMessage(from: data, statusCode: httpResponse.statusCode)
+            throw APIError.httpError(httpResponse.statusCode, message: errorMessage)
         }
         
         do {
@@ -438,9 +517,10 @@ class APIService: ObservableObject {
 enum APIError: Error, LocalizedError {
     case invalidURL
     case invalidResponse
-    case httpError(Int)
+    case httpError(Int, message: String?)
     case decodingError
     case noData
+    case unauthorized
     
     var errorDescription: String? {
         switch self {
@@ -448,12 +528,36 @@ enum APIError: Error, LocalizedError {
             return "Invalid URL"
         case .invalidResponse:
             return "Invalid response from server"
-        case .httpError(let code):
-            return "HTTP error with code: \(code)"
+        case .httpError(let code, let message):
+            // Use custom message if available, otherwise provide user-friendly defaults
+            if let message = message {
+                return message
+            }
+            // Provide user-friendly messages for common HTTP status codes
+            switch code {
+            case 400:
+                return "Invalid request. Please check your input."
+            case 401:
+                return "Not authenticated. Please log in."
+            case 403:
+                return "Access denied. You don't have permission to perform this action."
+            case 404:
+                return "Resource not found."
+            case 409:
+                return "An account with this email already exists. Please log in instead."
+            case 429:
+                return "Too many requests. Please wait a moment and try again."
+            case 500...599:
+                return "Server error. Please try again later."
+            default:
+                return "HTTP error with code: \(code)"
+            }
         case .decodingError:
             return "Failed to decode response"
         case .noData:
             return "No data received"
+        case .unauthorized:
+            return "Not authenticated. Please log in."
         }
     }
 }

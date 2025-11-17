@@ -7,6 +7,19 @@
 
 import SwiftUI
 
+struct HomeView: View {
+    @ObservedObject private var authManager = AuthManager.shared
+    
+    var body: some View {
+        if let user = authManager.currentUser {
+            HomePageView(isLoggedIn: .constant(true), user: user)
+        } else {
+            // Fallback if user not loaded yet
+            ProgressView("Loading...")
+        }
+    }
+}
+
 struct HomePageView: View {
     @Binding var isLoggedIn: Bool
     @State private var selectedTab: FooterTabBar.Tab = .home
