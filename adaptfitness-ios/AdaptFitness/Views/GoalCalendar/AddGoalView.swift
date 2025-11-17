@@ -9,7 +9,7 @@ import SwiftUI
 
 struct AddGoalView: View {
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var authManager = AuthManager.shared
+    @ObservedObject private var authManager = AuthManager.shared
     
     @State private var selectedGoalType: GoalType = .workoutsCount
     @State private var targetValue = ""
@@ -86,6 +86,7 @@ struct AddGoalView: View {
     
     private func saveGoal() {
         guard !targetValue.isEmpty,
+              let authToken = authManager.authToken,
               let target = Double(targetValue) else { return }
         
         let calendar = Calendar.current
@@ -107,15 +108,7 @@ struct AddGoalView: View {
         
         Task {
             do {
-                // Use the new APIService.request() method
-                // The new Core/Network/APIService handles auth automatically via KeychainManager
-                let apiService = APIService.shared
-                let newGoal: GoalCalendar = try await apiService.request(
-                    endpoint: "/goal-calendar",
-                    method: .post,
-                    body: goalRequest,
-                    requiresAuth: true
-                )
+                let newGoal = try await APIService.shared.createGoal(goalRequest, token: authToken)
                 await MainActor.run {
                     onGoalAdded(newGoal)
                     dismiss()

@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Request, UseGuards, Query, ValidationPipe } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { MealService } from './meal.service';
 import { FoodService } from './food.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -47,7 +48,9 @@ export class MealController {
    * Search for foods using OpenFoodFacts API
    * GET /meals/foods/search?query=apple&page=1&pageSize=20
    * Note: Must come before @Get(':id') to avoid route conflicts
+   * Higher rate limit for food search (200 requests per minute in dev, 30 in production)
    */
+  @Throttle({ default: { limit: process.env.NODE_ENV === 'development' ? 200 : 30, ttl: 60000 } })
   @Get('foods/search')
   async searchFoods(
     @Query(new ValidationPipe({ transform: true, transformOptions: { enableImplicitConversion: true } })) searchDto: FoodSearchDto,
@@ -59,7 +62,9 @@ export class MealController {
    * Get food by barcode using OpenFoodFacts API
    * GET /meals/foods/barcode/:barcode
    * Note: Must come before @Get(':id') to avoid route conflicts
+   * Higher rate limit for barcode lookup (200 requests per minute in dev, 30 in production)
    */
+  @Throttle({ default: { limit: process.env.NODE_ENV === 'development' ? 200 : 30, ttl: 60000 } })
   @Get('foods/barcode/:barcode')
   async getFoodByBarcode(@Param('barcode') barcode: string) {
     return this.foodService.getFoodByBarcode(barcode);

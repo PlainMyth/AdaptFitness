@@ -22,9 +22,6 @@ class WorkoutViewModel: ObservableObject {
     
     // MARK: - Private Properties
     
-    // Use APIService.shared (from Core/Network/APIService.swift)
-    // This has the .request() method with HTTPMethod enum support
-    // Note: There are two APIService classes - this uses the one with .request() method
     private let apiService = APIService.shared
     
     // MARK: - Public Methods
@@ -34,30 +31,49 @@ class WorkoutViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
         
+        guard let token = AuthManager.shared.authToken else {
+            handleError(.unauthorized)
+            return
+        }
+        
         do {
-            let response: [WorkoutResponse] = try await apiService.request(
-                endpoint: "/workouts",
-                method: .get,
-                requiresAuth: true
-            )
-            workouts = response.sorted { $0.startTime > $1.startTime }
+            let fetchedWorkouts = try await apiService.getWorkouts(token: token)
+            // Convert Workout to WorkoutResponse for compatibility
+            workouts = fetchedWorkouts.map { workout in
+                let formatter = ISO8601DateFormatter()
+                return WorkoutResponse(
+                    id: workout.id,
+                    name: workout.name,
+                    description: workout.description,
+                    startTime: formatter.date(from: workout.startTime) ?? Date(),
+                    endTime: workout.endTime != nil ? formatter.date(from: workout.endTime!) : nil,
+                    totalCaloriesBurned: workout.totalCaloriesBurned,
+                    totalDuration: Int(workout.totalDuration),
+                    notes: nil,
+                    userId: workout.userId,
+                    createdAt: formatter.date(from: workout.createdAt) ?? Date(),
+                    updatedAt: formatter.date(from: workout.updatedAt) ?? Date()
+                )
+            }
+            workouts = workouts.sorted { $0.startTime > $1.startTime }
             isLoading = false
-        } catch let error as NetworkError {
-            handleError(error)
         } catch {
-            handleError(.invalidResponse)
+            isLoading = false
+            errorMessage = "Failed to fetch workouts"
+            showError = true
         }
     }
     
     /// Fetch the current workout streak
     func fetchCurrentStreak() async {
+        guard let token = AuthManager.shared.authToken else {
+            currentStreak = 0
+            return
+        }
+        
         do {
-            let response: StreakResponse = try await apiService.request(
-                endpoint: "/workouts/streak/current",
-                method: .get,
-                requiresAuth: true
-            )
-            currentStreak = response.streak
+            let streak = try await apiService.getWorkoutStreak(token: token)
+            currentStreak = streak.streak
         } catch {
             // Silently fail for streak - it's not critical
             currentStreak = 0
@@ -70,55 +86,63 @@ class WorkoutViewModel: ObservableObject {
         description: String? = nil,
         startTime: Date,
         endTime: Date? = nil,
-        totalCaloriesBurned: Double? = nil,
-        totalDuration: Int? = nil,
-        notes: String? = nil
+        totalCaloriesBurned: Double = 0,
+        totalDuration: Double = 0,
+        totalSets: Double = 0,
+        totalReps: Double = 0,
+        totalWeight: Double = 0,
+        workoutType: WorkoutType? = nil,
+        isCompleted: Bool = true
     ) async throws {
         isLoading = true
         errorMessage = nil
         
-        // Convert Date to ISO8601 String format for backend
+        // Convert Date to ISO8601 String format
         let formatter = ISO8601DateFormatter()
         let startTimeString = formatter.string(from: startTime)
         let endTimeString = endTime != nil ? formatter.string(from: endTime!) : nil
         
-        // Create request matching backend CreateWorkoutDto structure
-        struct BackendCreateWorkoutRequest: Encodable {
-            let name: String
-            let description: String?
-            let startTime: String
-            let endTime: String?
-            let totalCaloriesBurned: Double?
-            let totalDuration: Int?
-            let notes: String?
-        }
-        
-        let request = BackendCreateWorkoutRequest(
+        let request = CreateWorkoutRequest(
             name: name,
             description: description,
             startTime: startTimeString,
             endTime: endTimeString,
             totalCaloriesBurned: totalCaloriesBurned,
             totalDuration: totalDuration,
-            notes: notes
+            totalSets: totalSets,
+            totalReps: totalReps,
+            totalWeight: totalWeight,
+            workoutType: workoutType,
+            isCompleted: isCompleted
         )
         
+        guard let token = AuthManager.shared.authToken else {
+            isLoading = false
+            throw NetworkError.unauthorized
+        }
+        
         do {
-            // Use the new APIService.request() method
-            let newWorkout: WorkoutResponse = try await apiService.request(
-                endpoint: "/workouts",
-                method: .post,
-                body: request,
-                requiresAuth: true
+            let createdWorkout = try await apiService.createWorkout(request, token: token)
+            // Convert Workout to WorkoutResponse
+            let formatter = ISO8601DateFormatter()
+            let newWorkout = WorkoutResponse(
+                id: createdWorkout.id,
+                name: createdWorkout.name,
+                description: createdWorkout.description,
+                startTime: formatter.date(from: createdWorkout.startTime) ?? Date(),
+                endTime: createdWorkout.endTime != nil ? formatter.date(from: createdWorkout.endTime!) : nil,
+                totalCaloriesBurned: createdWorkout.totalCaloriesBurned,
+                totalDuration: Int(createdWorkout.totalDuration),
+                notes: nil,
+                userId: createdWorkout.userId,
+                createdAt: formatter.date(from: createdWorkout.createdAt) ?? Date(),
+                updatedAt: formatter.date(from: createdWorkout.updatedAt) ?? Date()
             )
             workouts.insert(newWorkout, at: 0)
             isLoading = false
             
             // Refresh streak after creating workout
             await fetchCurrentStreak()
-        } catch let error as NetworkError {
-            isLoading = false
-            throw error
         } catch {
             isLoading = false
             throw NetworkError.invalidResponse
@@ -127,19 +151,16 @@ class WorkoutViewModel: ObservableObject {
     
     /// Delete a workout
     func deleteWorkout(id: String) async throws {
+        guard let token = AuthManager.shared.authToken else {
+            throw NetworkError.unauthorized
+        }
+        
         do {
-            struct EmptyResponse: Decodable {}
-            let _: EmptyResponse = try await apiService.request(
-                endpoint: "/workouts/\(id)",
-                method: .delete,
-                requiresAuth: true
-            )
+            try await apiService.deleteWorkout(id: id, token: token)
             workouts.removeAll { $0.id == id }
             
             // Refresh streak after deleting workout
             await fetchCurrentStreak()
-        } catch let error as NetworkError {
-            throw error
         } catch {
             throw NetworkError.invalidResponse
         }
@@ -154,27 +175,49 @@ class WorkoutViewModel: ObservableObject {
         totalDuration: Int? = nil,
         notes: String? = nil
     ) async throws {
-        let request = UpdateWorkoutRequest(
-            name: name,
+        guard let token = AuthManager.shared.authToken else {
+            throw NetworkError.unauthorized
+        }
+        
+        // For update, we need to create a CreateWorkoutRequest with the updated values
+        // Since we don't have the original workout here, we'll use the provided values or defaults
+        let formatter = ISO8601DateFormatter()
+        let now = formatter.string(from: Date())
+        
+        let request = CreateWorkoutRequest(
+            name: name ?? "",
             description: description,
-            totalCaloriesBurned: totalCaloriesBurned,
-            totalDuration: totalDuration,
-            notes: notes
+            startTime: now,
+            endTime: nil,
+            totalCaloriesBurned: totalCaloriesBurned ?? 0,
+            totalDuration: totalDuration != nil ? Double(totalDuration!) : 0,
+            totalSets: 0,
+            totalReps: 0,
+            totalWeight: 0,
+            workoutType: nil,
+            isCompleted: true
         )
         
         do {
-            let updated: WorkoutResponse = try await apiService.request(
-                endpoint: "/workouts/\(id)",
-                method: .put,
-                body: request,
-                requiresAuth: true
+            let updated = try await apiService.updateWorkout(id: id, workout: request, token: token)
+            // Convert Workout to WorkoutResponse
+            let updatedResponse = WorkoutResponse(
+                id: updated.id,
+                name: updated.name,
+                description: updated.description,
+                startTime: formatter.date(from: updated.startTime) ?? Date(),
+                endTime: updated.endTime != nil ? formatter.date(from: updated.endTime!) : nil,
+                totalCaloriesBurned: updated.totalCaloriesBurned,
+                totalDuration: Int(updated.totalDuration),
+                notes: nil,
+                userId: updated.userId,
+                createdAt: formatter.date(from: updated.createdAt) ?? Date(),
+                updatedAt: formatter.date(from: updated.updatedAt) ?? Date()
             )
             
             if let index = workouts.firstIndex(where: { $0.id == id }) {
-                workouts[index] = updated
+                workouts[index] = updatedResponse
             }
-        } catch let error as NetworkError {
-            throw error
         } catch {
             throw NetworkError.invalidResponse
         }
@@ -236,9 +279,6 @@ struct WorkoutResponse: Codable, Identifiable {
         return "N/A"
     }
 }
-
-// Note: CreateWorkoutRequest is defined in Models/Workout.swift
-// Using that definition to avoid duplication
 
 struct UpdateWorkoutRequest: Encodable {
     let name: String?

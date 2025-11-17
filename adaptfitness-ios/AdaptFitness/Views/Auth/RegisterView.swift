@@ -9,7 +9,7 @@ import SwiftUI
 
 struct RegisterView: View {
     @Environment(\.dismiss) var dismiss
-    @StateObject private var authManager = AuthManager.shared
+    @ObservedObject private var authManager = AuthManager.shared
     
     @State private var email: String = ""
     @State private var password: String = ""
@@ -194,12 +194,19 @@ struct RegisterView: View {
         // Call register
         Task {
             do {
-                try await authManager.register(
+                let registerRequest = RegisterRequest(
                     email: email,
                     password: password,
                     firstName: firstName,
-                    lastName: lastName
+                    lastName: lastName,
+                    dateOfBirth: nil,
+                    height: nil,
+                    weight: nil,
+                    gender: nil,
+                    activityLevel: nil
                 )
+                
+                try await authManager.register(user: registerRequest)
                 
                 // Success - dismiss to go back to app
                 dismiss()

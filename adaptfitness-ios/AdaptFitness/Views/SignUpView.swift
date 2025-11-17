@@ -22,8 +22,7 @@ struct SignUpView: View {
     @State private var gender: String = ""
     @State private var activityLevel: String = ""
     
-    @State private var isLoading = false
-    @State private var errorMessage: String?
+    @State private var localErrorMessage: String?
     
     let genders = ["male", "female", "other"]
     let activityLevels = ["sedentary", "lightly_active", "moderately_active", "very_active", "extremely_active"]
@@ -117,7 +116,7 @@ struct SignUpView: View {
                         }
                         
                         // Error message
-                        if let errorMessage = errorMessage {
+                        if let errorMessage = localErrorMessage ?? authManager.errorMessage {
                             Text(errorMessage)
                                 .foregroundColor(.red)
                                 .font(.caption)
@@ -129,7 +128,7 @@ struct SignUpView: View {
                                 await performSignUp()
                             }
                         }) {
-                            if isLoading {
+                            if authManager.isLoading {
                                 HStack {
                                     ProgressView()
                                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
@@ -145,7 +144,7 @@ struct SignUpView: View {
                         .background(isFormValid ? Color.blue : Color.gray)
                         .foregroundColor(.white)
                         .cornerRadius(8)
-                        .disabled(!isFormValid || isLoading)
+                        .disabled(!isFormValid || authManager.isLoading)
                     }
                     .padding(.horizontal)
                 }
@@ -173,39 +172,42 @@ struct SignUpView: View {
     
     private func performSignUp() async {
         guard password == confirmPassword else {
-            errorMessage = "Passwords do not match"
+            localErrorMessage = "Passwords do not match"
             return
         }
         
         guard password.count >= 6 else {
-            errorMessage = "Password must be at least 6 characters"
+            localErrorMessage = "Password must be at least 6 characters"
             return
         }
         
-        isLoading = true
-        errorMessage = nil
+        localErrorMessage = nil
+        
+        let formatter = ISO8601DateFormatter()
+        
+        let registerRequest = RegisterRequest(
+            email: email,
+            password: password,
+            firstName: firstName,
+            lastName: lastName,
+            dateOfBirth: formatter.string(from: dateOfBirth),
+            height: height.isEmpty ? nil : Double(height),
+            weight: weight.isEmpty ? nil : Double(weight),
+            gender: gender.isEmpty ? nil : gender,
+            activityLevel: activityLevel.isEmpty ? nil : activityLevel
+        )
         
         do {
-            // Use the new AuthManager.register() method signature
-            // Note: Additional fields (dateOfBirth, height, weight, gender, activityLevel)
-            // can be updated via user profile endpoint after registration
-            try await authManager.register(
-                email: email,
-                password: password,
-                firstName: firstName,
-                lastName: lastName
-            )
-            
+            try await authManager.register(user: registerRequest)
             if authManager.isAuthenticated {
                 dismiss()
             } else {
-                errorMessage = "Failed to create account. Please try again."
+                localErrorMessage = "Failed to create account. Please try again."
             }
         } catch {
-            errorMessage = authManager.errorMessage ?? "Failed to create account. Please try again."
+            // Error is already set in authManager.errorMessage
+            localErrorMessage = authManager.errorMessage ?? "Failed to create account. Please try again."
         }
-        
-        isLoading = false
     }
 }
 

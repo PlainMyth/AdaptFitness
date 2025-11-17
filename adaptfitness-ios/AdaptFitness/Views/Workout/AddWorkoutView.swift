@@ -9,7 +9,7 @@ import SwiftUI
 
 struct AddWorkoutView: View {
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var authManager = AuthManager.shared
+    @ObservedObject private var authManager = AuthManager.shared
     
     @State private var name = ""
     @State private var description = ""
@@ -120,7 +120,8 @@ struct AddWorkoutView: View {
     }
     
     private func saveWorkout() {
-        guard !name.isEmpty else { return }
+        guard !name.isEmpty,
+              let authToken = authManager.authToken else { return }
         
         let formatter = ISO8601DateFormatter()
         
@@ -140,15 +141,7 @@ struct AddWorkoutView: View {
         
         Task {
             do {
-                // Use the new APIService.request() method
-                // The new Core/Network/APIService handles auth automatically via KeychainManager
-                let apiService = APIService.shared
-                let newWorkout: Workout = try await apiService.request(
-                    endpoint: "/workouts",
-                    method: .post,
-                    body: workoutRequest,
-                    requiresAuth: true
-                )
+                let newWorkout = try await APIService.shared.createWorkout(workoutRequest, token: authToken)
                 await MainActor.run {
                     onWorkoutAdded(newWorkout)
                     dismiss()

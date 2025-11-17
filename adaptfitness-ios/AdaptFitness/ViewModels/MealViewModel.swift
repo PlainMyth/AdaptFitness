@@ -109,7 +109,11 @@ class MealViewModel: ObservableObject {
     
     var mealsByType: [MealType: [Meal]] {
         Dictionary(grouping: meals) { meal in
-            meal.mealType ?? .other
+            if let mealTypeString = meal.mealType,
+               let mealType = MealType(rawValue: mealTypeString) {
+                return mealType
+            }
+            return .other
         }
     }
     

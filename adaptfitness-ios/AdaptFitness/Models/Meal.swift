@@ -6,6 +6,42 @@
 //
 import SwiftUI
 
+struct Meal: Codable, Identifiable {
+    var id: String
+    var userId: String
+    var name: String
+    var description: String?
+    var mealTime: String  // ISO8601 date string from backend
+    var totalCalories: Double
+    var totalProtein: Double
+    var totalCarbs: Double
+    var totalFat: Double
+    var totalFiber: Double?
+    var totalSugar: Double?
+    var totalSodium: Double?
+    var mealType: String?  // 'breakfast', 'lunch', 'dinner', 'snack', 'other'
+    var servingSize: Double?
+    var servingUnit: String?
+    var createdAt: String?
+    var updatedAt: String?
+    
+    // Computed property for Date from mealTime string
+    var date: Date? {
+        let formatter = ISO8601DateFormatter()
+        return formatter.date(from: mealTime)
+    }
+    
+    // Compatibility property for older code
+    var type: String {
+        return mealType ?? "other"
+    }
+    
+    // Compatibility property for older code (empty array since foods aren't stored this way)
+    var foods: [FoodEntry] {
+        return []
+    }
+}
+
 enum MealType: String, Codable, CaseIterable {
     case breakfast = "breakfast"
     case lunch = "lunch"
@@ -27,82 +63,48 @@ enum MealType: String, Codable, CaseIterable {
         switch self {
         case .breakfast: return "sunrise.fill"
         case .lunch: return "sun.max.fill"
-        case .dinner: return "moon.fill"
+        case .dinner: return "moon.stars.fill"
         case .snack: return "leaf.fill"
         case .other: return "fork.knife"
         }
     }
 }
 
-struct Meal: Codable, Identifiable {
-    var id: String
-    var userId: String
-    var date: Date
-    var type: String
-    var mealType: MealType? {
-        MealType(rawValue: type)
-    }
-    var foods: [FoodEntry]
-    
-    // Backend API fields
-    var name: String?
-    var description: String?
-    var mealTime: String?
-    var totalCalories: Double?
-    var totalProtein: Double?
-    var totalCarbs: Double?
-    var totalFat: Double?
-    var totalFiber: Double?
-    var totalSugar: Double?
-    var totalSodium: Double?
-}
-
-// Request struct for creating meals via API
-struct CreateMealRequest: Codable {
-    let name: String
-    let description: String?
-    let mealTime: String
-    let totalCalories: Double
-    let totalProtein: Double?
-    let totalCarbs: Double?
-    let totalFat: Double?
-    let totalFiber: Double?
-    let totalSugar: Double?
-    let totalSodium: Double?
-    let mealType: MealType?
-    let servingSize: Double?
-    let servingUnit: String?
-}
-
 extension Meal {
     var dayLabel: String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .none
-        return formatter.string(from: date)
+        if let date = date {
+            let formatter = DateFormatter()
+            formatter.dateStyle = .medium
+            formatter.timeStyle = .none
+            return formatter.string(from: date)
+        }
+        return "Unknown"
     }
     
     static let exampleMeals: [Meal] = [
         Meal(
             id: UUID().uuidString,
             userId: "user123",
-            date: Date(),
-            type: "breakfast",
-            foods: [FoodEntry.exampleFoodEntries[0], FoodEntry.exampleFoodEntries[2]]
-        ),
-        Meal(
-            id: UUID().uuidString,
-            userId: "user123",
-            date: Date().addingTimeInterval(-86400),
-            type: "breakfast",
-            foods: [FoodEntry.exampleFoodEntries[1], FoodEntry.exampleFoodEntries[3], FoodEntry.exampleFoodEntries[4]]
+            name: "Breakfast",
+            description: nil,
+            mealTime: ISO8601DateFormatter().string(from: Date()),
+            totalCalories: 450,
+            totalProtein: 20,
+            totalCarbs: 60,
+            totalFat: 15,
+            mealType: "breakfast"
         )
     ]
 }
 
 extension Array where Element == Meal {
     func groupedByDayDescending() -> [(day: Date, meals: [Meal])] {
-        let grouped = Dictionary(grouping: self) { Calendar.current.startOfDay(for: $0.date) }
+        let grouped = Dictionary(grouping: self) { meal -> Date in
+            if let date = meal.date {
+                return Calendar.current.startOfDay(for: date)
+            }
+            return Calendar.current.startOfDay(for: Date())
+        }
         return grouped
             .map { (day: $0.key, meals: $0.value) }
             .sorted { $0.day > $1.day } // newest first

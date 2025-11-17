@@ -87,7 +87,7 @@ struct MealRowView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Image(systemName: meal.mealType?.icon ?? "fork.knife")
+                Image(systemName: mealIcon)
                     .foregroundColor(.orange)
                     .frame(width: 20)
                 
@@ -111,8 +111,8 @@ struct MealRowView: View {
                         .font(.caption)
                         .fontWeight(.medium)
                     
-                    if let protein = meal.totalProtein {
-                        Text("\(Int(protein))g protein")
+                    if meal.totalProtein > 0 {
+                        Text("\(Int(meal.totalProtein))g protein")
                             .font(.caption2)
                             .foregroundColor(.secondary)
                     }
@@ -120,7 +120,8 @@ struct MealRowView: View {
             }
             
             HStack {
-                if let mealType = meal.mealType {
+                if let mealTypeString = meal.mealType,
+                   let mealType = MealType(rawValue: mealTypeString) {
                     Text(mealType.displayName)
                         .font(.caption)
                         .padding(.horizontal, 8)
@@ -144,6 +145,14 @@ struct MealRowView: View {
             }
         }
         .padding(.vertical, 4)
+    }
+    
+    private var mealIcon: String {
+        if let mealTypeString = meal.mealType,
+           let mealType = MealType(rawValue: mealTypeString) {
+            return mealType.icon
+        }
+        return "fork.knife"
     }
     
     private func formatMealTime(_ timeString: String) -> String {

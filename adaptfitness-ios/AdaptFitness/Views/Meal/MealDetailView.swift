@@ -2,7 +2,7 @@
 //  MealDetailView.swift
 //  AdaptFitness
 //
-//  Detail view for displaying meal information
+//  Meal detail view showing full meal information
 //
 
 import SwiftUI
@@ -15,72 +15,95 @@ struct MealDetailView: View {
         NavigationView {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    // Meal Header
+                    // Header
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(meal.name ?? "Unnamed Meal")
-                            .font(.title)
-                            .fontWeight(.bold)
+                        HStack {
+                            Image(systemName: {
+                                if let mealTypeString = meal.mealType,
+                                   let mealType = MealType(rawValue: mealTypeString) {
+                                    return mealType.icon
+                                }
+                                return "fork.knife"
+                            }())
+                                .font(.title)
+                                .foregroundColor(.orange)
+                            
+                            VStack(alignment: .leading) {
+                                Text(meal.name)
+                                    .font(.title2)
+                                    .fontWeight(.bold)
+                                
+                                if let mealTypeString = meal.mealType,
+                                   let mealType = MealType(rawValue: mealTypeString) {
+                                    Text(mealType.displayName)
+                                        .font(.subheadline)
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                            
+                            Spacer()
+                        }
                         
                         if let description = meal.description, !description.isEmpty {
                             Text(description)
                                 .font(.body)
                                 .foregroundColor(.secondary)
                         }
-                        
-                        if let mealType = meal.mealType {
-                            HStack {
-                                Image(systemName: mealType.icon)
-                                Text(mealType.displayName)
-                            }
-                            .font(.subheadline)
-                            .foregroundColor(.orange)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(Color.orange.opacity(0.1))
-                            .cornerRadius(8)
-                        }
-                    }
-                    .padding()
-                    
-                    // Nutrition Information
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Nutrition Information")
-                            .font(.headline)
-                            .fontWeight(.semibold)
-                        
-                        VStack(spacing: 12) {
-                            NutritionRow(label: "Calories", value: meal.totalCalories, unit: "kcal")
-                            NutritionRow(label: "Protein", value: meal.totalProtein, unit: "g")
-                            NutritionRow(label: "Carbs", value: meal.totalCarbs, unit: "g")
-                            NutritionRow(label: "Fat", value: meal.totalFat, unit: "g")
-                            NutritionRow(label: "Fiber", value: meal.totalFiber, unit: "g")
-                            NutritionRow(label: "Sugar", value: meal.totalSugar, unit: "g")
-                            NutritionRow(label: "Sodium", value: meal.totalSodium, unit: "mg")
-                        }
                     }
                     .padding()
                     .background(Color(.systemGray6))
                     .cornerRadius(12)
-                    .padding(.horizontal)
                     
-                    // Meal Time
-                    if let mealTime = meal.mealTime {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Meal Time")
-                                .font(.headline)
-                                .fontWeight(.semibold)
-                            
-                            Text(formatMealTime(mealTime))
-                                .font(.body)
-                                .foregroundColor(.secondary)
-                        }
-                        .padding()
-                        .background(Color(.systemGray6))
-                        .cornerRadius(12)
-                        .padding(.horizontal)
+                    // Nutrition Stats
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 16) {
+                        NutritionCard(
+                            title: "Calories",
+                            value: "\(Int(meal.totalCalories))",
+                            unit: "kcal",
+                            icon: "flame.fill",
+                            color: .orange
+                        )
+                        
+                        NutritionCard(
+                            title: "Protein",
+                            value: "\(Int(meal.totalProtein))",
+                            unit: "g",
+                            icon: "dumbbell.fill",
+                            color: .blue
+                        )
+                        
+                        NutritionCard(
+                            title: "Carbs",
+                            value: "\(Int(meal.totalCarbs))",
+                            unit: "g",
+                            icon: "leaf.fill",
+                            color: .green
+                        )
+                        
+                        NutritionCard(
+                            title: "Fat",
+                            value: "\(Int(meal.totalFat))",
+                            unit: "g",
+                            icon: "drop.fill",
+                            color: .purple
+                        )
                     }
+                    
+                    // Timing Information
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Meal Time")
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                        
+                        Text(formatMealTime(meal.mealTime))
+                            .font(.body)
+                            .fontWeight(.medium)
+                    }
+                    .padding()
+                    .background(Color(.systemGray6))
+                    .cornerRadius(12)
                 }
-                .padding(.vertical)
+                .padding()
             }
             .navigationTitle("Meal Details")
             .navigationBarTitleDisplayMode(.inline)
@@ -101,48 +124,60 @@ struct MealDetailView: View {
         let displayFormatter = DateFormatter()
         displayFormatter.dateStyle = .medium
         displayFormatter.timeStyle = .short
+        
         return displayFormatter.string(from: date)
     }
 }
 
-struct NutritionRow: View {
-    let label: String
-    let value: Double?
+struct NutritionCard: View {
+    let title: String
+    let value: String
     let unit: String
+    let icon: String
+    let color: Color
     
     var body: some View {
-        HStack {
-            Text(label)
-                .foregroundColor(.secondary)
-            Spacer()
-            if let value = value {
-                Text("\(Int(value)) \(unit)")
-                    .fontWeight(.medium)
-            } else {
-                Text("N/A")
+        VStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.title2)
+                .foregroundColor(color)
+            
+            VStack(spacing: 2) {
+                Text(value)
+                    .font(.title3)
+                    .fontWeight(.bold)
+                
+                Text(unit)
+                    .font(.caption)
                     .foregroundColor(.secondary)
             }
+            
+            Text(title)
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
         }
+        .frame(maxWidth: .infinity)
+        .padding()
+        .background(Color(.systemGray6))
+        .cornerRadius(12)
     }
 }
 
 #Preview {
-    MealDetailView(meal: Meal(
-        id: UUID().uuidString,
-        userId: "user123",
-        date: Date(),
-        type: "breakfast",
-        foods: [],
-        name: "Scrambled Eggs",
-        description: "With toast and orange juice",
+    let sampleMeal = Meal(
+        id: "1",
+        userId: "user1",
+        name: "Breakfast",
+        description: "Scrambled eggs with toast",
         mealTime: ISO8601DateFormatter().string(from: Date()),
-        totalCalories: 350,
-        totalProtein: 20,
-        totalCarbs: 30,
-        totalFat: 15,
-        totalFiber: 2,
-        totalSugar: 5,
-        totalSodium: 400
-    ))
+        totalCalories: 450,
+        totalProtein: 25,
+        totalCarbs: 35,
+        totalFat: 20,
+        mealType: "breakfast"
+    )
+    
+    MealDetailView(meal: sampleMeal)
 }
 

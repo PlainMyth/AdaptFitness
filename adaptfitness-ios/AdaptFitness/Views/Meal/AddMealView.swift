@@ -9,7 +9,7 @@ import SwiftUI
 
 struct AddMealView: View {
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var authManager = AuthManager.shared
+    @ObservedObject private var authManager = AuthManager.shared
     
     @State private var name = ""
     @State private var description = ""
@@ -134,7 +134,8 @@ struct AddMealView: View {
     
     private func saveMeal() {
         guard !name.isEmpty,
-              !calories.isEmpty else { return }
+              !calories.isEmpty,
+              let authToken = authManager.authToken else { return }
         
         let formatter = ISO8601DateFormatter()
         
@@ -143,28 +144,20 @@ struct AddMealView: View {
             description: description.isEmpty ? nil : description,
             mealTime: formatter.string(from: mealTime),
             totalCalories: Double(calories) ?? 0,
+            mealType: selectedMealType?.rawValue,
             totalProtein: protein.isEmpty ? nil : Double(protein),
             totalCarbs: carbs.isEmpty ? nil : Double(carbs),
             totalFat: fat.isEmpty ? nil : Double(fat),
             totalFiber: fiber.isEmpty ? nil : Double(fiber),
             totalSugar: sugar.isEmpty ? nil : Double(sugar),
             totalSodium: sodium.isEmpty ? nil : Double(sodium),
-            mealType: selectedMealType,
             servingSize: nil,
             servingUnit: nil
         )
         
         Task {
             do {
-                // Use the new APIService.request() method
-                // The new Core/Network/APIService handles auth automatically via KeychainManager
-                let apiService = APIService.shared
-                let newMeal: Meal = try await apiService.request(
-                    endpoint: "/meals",
-                    method: .post,
-                    body: mealRequest,
-                    requiresAuth: true
-                )
+                let newMeal = try await APIService.shared.createMeal(mealRequest, token: authToken)
                 await MainActor.run {
                     onMealAdded(newMeal)
                     dismiss()
