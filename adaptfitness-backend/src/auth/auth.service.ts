@@ -76,7 +76,7 @@ export class AuthService {
     };
   }
 
-  async register(registerDto: RegisterDto): Promise<RegisterResponseDto> {
+  async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
     try {
       // Validate password strength before proceeding
       const passwordValidation = PasswordValidator.validate(registerDto.password);
@@ -96,8 +96,11 @@ export class AuthService {
       });
       
       const { password, ...result } = user;
+      
+      // Generate JWT token for immediate login after registration
+      const payload = { email: result.email, sub: result.id };
       return {
-        message: 'User created successfully',
+        access_token: this.jwtService.sign(payload),
         user: {
           id: result.id,
           email: result.email,

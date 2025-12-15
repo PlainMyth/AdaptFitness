@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct BrowseWorkoutsView: View {
-    @State private var selectedTab: FooterTabBar.Tab = .browse
+    @State private var selectedTab: FooterTabBar.Tab = .workout
     
     let workoutTemplates: [WorkoutTemplate] = [
         WorkoutTemplate(name: "Add Custom Workout", intensity: "", calories: "", systemImage: "plus.circle"),

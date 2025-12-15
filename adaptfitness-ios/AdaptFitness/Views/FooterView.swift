@@ -13,7 +13,7 @@ struct FooterTabBar: View {
     @StateObject private var authManager = AuthManager.shared
     
     enum Tab {
-        case home, stats, calendar, browse
+        case home, stats, calendar, workout
     }
     
     var body: some View {
@@ -56,14 +56,14 @@ struct FooterTabBar: View {
             
             Spacer()
             
-            Button(action: { selectedTab = .browse }) {
+            Button(action: { selectedTab = .workout }) {
                 VStack {
-                    Image(systemName: "magnifyingglass")
+                    Image(systemName: "figure.run")
                         .font(.system(size: 20))
-                    Text("Browse")
+                    Text("Workout")
                         .font(.caption2)
                 }
-                .foregroundColor(selectedTab == .browse ? .blue : .gray)
+                .foregroundColor(selectedTab == .workout ? .blue : .gray)
             }
             
             Spacer()
