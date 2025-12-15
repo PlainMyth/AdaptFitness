@@ -27,6 +27,7 @@ import { MealModule } from './meal/meal.module';
 import { HealthMetricsModule } from './health-metrics/health-metrics.module';
 import { GoalCalendarModule } from './goal-calendar/goal-calendar.module';
 import { AiWorkoutPlanGeneratorModule } from './ai-workout-plan-generator/ai-workout-plan-generator.module';
+import { WorkoutPlanModule } from './workout-plan/workout-plan.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { JwtStrategy } from './auth/strategies/jwt.strategy';
@@ -89,6 +90,7 @@ import { throttlerConfig } from './config/throttler.config';
     HealthMetricsModule,     // Health metrics and body composition
     GoalCalendarModule,      // Goal calendar and weekly fitness goals
     AiWorkoutPlanGeneratorModule, // AI-powered workout plan generation
+    WorkoutPlanModule,       // Workout plan persistence and management
   ],
   
   // Root-level controllers

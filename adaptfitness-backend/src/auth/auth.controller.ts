@@ -52,7 +52,7 @@ export class AuthController {
    */
   @Post('register')
   @Throttle({ default: { limit: authThrottlerConfig.limit, ttl: authThrottlerConfig.ttl } })
-  async register(@Body(ValidationPipe) registerDto: RegisterDto): Promise<RegisterResponseDto> {
+  async register(@Body(ValidationPipe) registerDto: RegisterDto): Promise<AuthResponseDto> {
     return this.authService.register(registerDto);
   }
 
