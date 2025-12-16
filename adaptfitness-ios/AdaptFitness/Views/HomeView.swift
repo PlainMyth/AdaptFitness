@@ -45,8 +45,8 @@ struct HomePageView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Show different views based on selected tab
-            if selectedTab == .browse {
-                BrowseWorkoutsView()
+            if selectedTab == .workout {
+                WorkoutPlanView()
             } else if selectedTab == .stats {
                 TrackingView()
             } else if selectedTab == .calendar {
