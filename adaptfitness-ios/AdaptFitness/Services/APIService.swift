@@ -18,11 +18,11 @@ class APIService: ObservableObject {
     private var baseURL: String {
         // Check if running on simulator
         #if targetEnvironment(simulator)
-        // Simulator can connect to localhost - works for everyone
-        return "http://localhost:3000"
+        // // Simulator can connect to localhost - works for everyone
+            return "http://localhost:3000"
         #else
         // Physical device uses production URL - works universally
-        return "https://adaptfitness-production.up.railway.app"
+            return "https://adaptfitness-production.up.railway.app"
         #endif
     }
     
@@ -111,7 +111,39 @@ class APIService: ObservableObject {
             throw APIError.httpError(httpResponse.statusCode, message: errorMessage)
         }
     }
-    
+
+    // MARK: - Workout Plans
+
+    func generateAndSaveWorkoutPlan(_ request: GenerateWorkoutPlanRequest, token: String) async throws -> WorkoutPlan {
+        let response: GenerateAndSaveWorkoutPlanResponse = try await performAuthenticatedRequest(
+            endpoint: "/workout-plans/generate-and-save",
+            method: "POST",
+            body: request,
+            token: token,
+            responseType: GenerateAndSaveWorkoutPlanResponse.self
+        )
+        return response.data
+    }
+
+    func getActiveWorkoutPlan(token: String) async throws -> WorkoutPlan? {
+        let response: ActivePlanResponse = try await performAuthenticatedRequest(
+            endpoint: "/workout-plans/active",
+            method: "GET",
+            token: token,
+            responseType: ActivePlanResponse.self
+        )
+        return response.data
+    }
+
+    func retireWorkoutPlan(id: String, token: String) async throws -> WorkoutPlan {
+        return try await performAuthenticatedRequest(
+            endpoint: "/workout-plans/\(id)/retire",
+            method: "PUT",
+            token: token,
+            responseType: WorkoutPlan.self
+        )
+    }
+
     // MARK: - Meals
     
     func getMeals(token: String) async throws -> [Meal] {

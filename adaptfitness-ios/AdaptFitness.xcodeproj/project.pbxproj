@@ -40,6 +40,12 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		27DE80972EEC092C00037D76 /* Core */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			name = Core;
+			path = AdaptFitness/Core;
+			sourceTree = "<group>";
+		};
 		7A91F4FB2E7936A600A23CA3 /* AdaptFitness */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -88,6 +94,7 @@
 		7A91F4F02E7936A600A23CA3 = {
 			isa = PBXGroup;
 			children = (
+				27DE80972EEC092C00037D76 /* Core */,
 				7A91F4FB2E7936A600A23CA3 /* AdaptFitness */,
 				7A91F50B2E7936A900A23CA3 /* AdaptFitnessTests */,
 				7A91F5152E7936A900A23CA3 /* AdaptFitnessUITests */,
@@ -121,6 +128,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
+				27DE80972EEC092C00037D76 /* Core */,
 				7A91F4FB2E7936A600A23CA3 /* AdaptFitness */,
 			);
 			name = AdaptFitness;
