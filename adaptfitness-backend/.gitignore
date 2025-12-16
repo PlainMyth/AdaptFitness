@@ -28,3 +28,8 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+
+.env
+.env.local
+.env.*.local
