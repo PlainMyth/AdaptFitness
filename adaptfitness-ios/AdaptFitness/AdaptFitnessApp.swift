@@ -30,7 +30,8 @@ struct AdaptFitnessApp: App {
             if authManager.isAuthenticated {
                 ContentView()
             } else {
-                LoginView()
+//                LoginView()
+                ContentView()
             }
         }
         .modelContainer(sharedModelContainer)

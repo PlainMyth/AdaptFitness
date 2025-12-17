@@ -36,7 +36,7 @@ struct ContentView: View {
                     Text("Profile")
                 }
         }
-        .environmentObject(authManager)
+//        .environmentObject(authManager)
     }
 }
 
