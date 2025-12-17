@@ -11,31 +11,31 @@ struct ContentView: View {
     @StateObject private var authManager = AuthManager.shared
     
     var body: some View {
-        TabView {
+//        TabView {
             HomeView()
-                .tabItem {
-                    Image(systemName: "house.fill")
-                    Text("Home")
-                }
-            
-            MealTrackerMainView()
-                .tabItem {
-                    Image(systemName: "fork.knife")
-                    Text("Meals")
-                }
-            
-            WorkoutListView()
-                .tabItem {
-                    Image(systemName: "figure.run")
-                    Text("Workouts")
-                }
-            
-            ProfileView()
-                .tabItem {
-                    Image(systemName: "person.fill")
-                    Text("Profile")
-                }
-        }
+//                .tabItem {
+//                    Image(systemName: "house.fill")
+//                    Text("Home")
+//                }
+//            
+//            MealTrackerMainView()
+//                .tabItem {
+//                    Image(systemName: "fork.knife")
+//                    Text("Meals")
+//                }
+//            
+//            WorkoutListView()
+//                .tabItem {
+//                    Image(systemName: "figure.run")
+//                    Text("Workouts")
+//                }
+//            
+//            ProfileView()
+//                .tabItem {
+//                    Image(systemName: "person.fill")
+//                    Text("Profile")
+//                }
+//        }
         .environmentObject(authManager)
     }
 }
