@@ -14,9 +14,9 @@ struct GoalCalendar: Codable, Identifiable {
     let weekEndDate: String
     let goalType: String
 
-    let targetValue: String
-    let currentValue: String
-    let completionPercentage: String
+    let targetValue: Double
+    let currentValue: Double
+    let completionPercentage: Double
 
     let isCompleted: Bool
     let isActive: Bool
@@ -25,6 +25,62 @@ struct GoalCalendar: Codable, Identifiable {
     let progressHistory: [ProgressEntry]?
     let createdAt: String
     let updatedAt: String
+    
+    // Custom decoding to handle both String and Number types from backend
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        id = try container.decode(UUID.self, forKey: .id)
+        userId = try container.decode(UUID.self, forKey: .userId)
+        weekStartDate = try container.decode(String.self, forKey: .weekStartDate)
+        weekEndDate = try container.decode(String.self, forKey: .weekEndDate)
+        goalType = try container.decode(String.self, forKey: .goalType)
+        
+        // Handle targetValue - can come as String or Double from backend
+        if let doubleValue = try? container.decode(Double.self, forKey: .targetValue) {
+            targetValue = doubleValue
+        } else if let stringValue = try? container.decode(String.self, forKey: .targetValue),
+                  let parsed = Double(stringValue) {
+            targetValue = parsed
+        } else {
+            targetValue = 0
+        }
+        
+        // Handle currentValue - can come as String or Double from backend
+        if let doubleValue = try? container.decode(Double.self, forKey: .currentValue) {
+            currentValue = doubleValue
+        } else if let stringValue = try? container.decode(String.self, forKey: .currentValue),
+                  let parsed = Double(stringValue) {
+            currentValue = parsed
+        } else {
+            currentValue = 0
+        }
+        
+        // Handle completionPercentage - can come as String or Double from backend
+        if let doubleValue = try? container.decode(Double.self, forKey: .completionPercentage) {
+            completionPercentage = doubleValue
+        } else if let stringValue = try? container.decode(String.self, forKey: .completionPercentage),
+                  let parsed = Double(stringValue) {
+            completionPercentage = parsed
+        } else {
+            completionPercentage = 0
+        }
+        
+        isCompleted = try container.decode(Bool.self, forKey: .isCompleted)
+        isActive = try container.decode(Bool.self, forKey: .isActive)
+        description = try container.decodeIfPresent(String.self, forKey: .description)
+        workoutType = try container.decodeIfPresent(String.self, forKey: .workoutType)
+        progressHistory = try container.decodeIfPresent([ProgressEntry].self, forKey: .progressHistory)
+        createdAt = try container.decode(String.self, forKey: .createdAt)
+        updatedAt = try container.decode(String.self, forKey: .updatedAt)
+    }
+    
+    private enum CodingKeys: String, CodingKey {
+        case id, userId, weekStartDate, weekEndDate, goalType
+        case targetValue, currentValue, completionPercentage
+        case isCompleted, isActive, description, workoutType
+        case progressHistory, createdAt, updatedAt
+    }
 }
 
 extension GoalCalendar {
@@ -34,22 +90,23 @@ extension GoalCalendar {
 }
 
 extension GoalCalendar {
+    // These are now direct properties since we decode as Double
     var targetValueDouble: Double {
-        Double(targetValue) ?? 0
+        targetValue
     }
 
     var currentValueDouble: Double {
-        Double(currentValue) ?? 0
+        currentValue
     }
 
     var completionPercentageDouble: Double {
-        Double(completionPercentage) ?? 0
+        completionPercentage
     }
 }
 
 extension GoalCalendar {
     var completionFraction: Double {
-        (Double(completionPercentage) ?? 0.0) / 100.0
+        completionPercentage / 100.0
     }
 }
 
