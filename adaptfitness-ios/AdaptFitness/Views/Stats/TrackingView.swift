@@ -112,10 +112,25 @@ struct TrackingView: View {
                     
                     // MARK: - Nutrition Calculations
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Nutrition Summary")
-                            .font(.headline)
-                            .fontWeight(.semibold)
-                            .padding(.horizontal)
+                        
+                        HStack {
+                            Text("Nutrition Summary")
+                                .font(.headline)
+                                .fontWeight(.semibold)
+
+                            Spacer()
+
+                            NavigationLink(destination: MealTrackerMainView()) {
+                                Image(systemName: "plus")
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .padding(10)
+                                    .background(Color.blue)
+                                    .clipShape(Circle())
+                                    .shadow(radius: 2)
+                            }
+                        }
+                        .padding(.horizontal)
                         
                         LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 16) {
                             NutritionStatCard(

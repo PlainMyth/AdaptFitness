@@ -18,10 +18,8 @@ struct GoalTileView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Text("Hstack GoalTileView")
             // MARK: Progress Ring
             ZStack {
-                Text("Zstack GoalTileView")
                 Circle()
                     .stroke(Color.gray.opacity(0.2), lineWidth: 10)
 

@@ -185,57 +185,57 @@ struct HomePageView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             
-            // Originally meant for other things, but now idk
-            ZStack {
-
-                // Floating button
-                VStack {
-                    HStack {
-                        Spacer() // push it to bottom-right
-
-//                        Camera Button
-                        // TODO: Camera not working in simulation, check real phone, then Info.plist                                                            
-                        if let image = capturedImage {
-                            Image(uiImage: image)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(height: 200)
-                                .cornerRadius(10)
-                                .padding()
-                        }
-                        
-                        if let barcode = scannedBarcode {
-                            VStack {
-                                Text("Scanned Barcode:")
-                                    .font(.headline)
-                                    .foregroundColor(.blue)
-                                Text(barcode)
-                                    .font(.system(.body, design: .monospaced))
-                                    .padding()
-                                    .background(Color.gray.opacity(0.1))
-                                    .cornerRadius(8)
-                                    .padding()
-                            }
-                        }
-
-                        Button(action: {
-                            showBarcodeScanner = true
-                        }) {
-                            Image(systemName: "barcode")
-                                .font(.system(size: 24, weight: .bold))
-                                .padding()
-                                .background(Color.blue)
-                                .foregroundColor(.white)
-                                .clipShape(Circle())
-                                .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 3)                                                                      
-                        }
-                        .sheet(isPresented: $showBarcodeScanner) {
-                            BarcodeScannerView(scannedCode: $scannedBarcode)
-                        }
-                    }
-                }
-            }
-            .background(Color(.systemGroupedBackground).ignoresSafeArea())
+//            // Originally meant for other things, but now idk
+//            ZStack {
+//
+//                // Floating button
+//                VStack {
+//                    HStack {
+//                        Spacer() // push it to bottom-right
+//
+////                        Camera Button
+//                        // TODO: Camera not working in simulation, check real phone, then Info.plist                                                            
+//                        if let image = capturedImage {
+//                            Image(uiImage: image)
+//                                .resizable()
+//                                .scaledToFit()
+//                                .frame(height: 200)
+//                                .cornerRadius(10)
+//                                .padding()
+//                        }
+//                        
+//                        if let barcode = scannedBarcode {
+//                            VStack {
+//                                Text("Scanned Barcode:")
+//                                    .font(.headline)
+//                                    .foregroundColor(.blue)
+//                                Text(barcode)
+//                                    .font(.system(.body, design: .monospaced))
+//                                    .padding()
+//                                    .background(Color.gray.opacity(0.1))
+//                                    .cornerRadius(8)
+//                                    .padding()
+//                            }
+//                        }
+//
+//                        Button(action: {
+//                            showBarcodeScanner = true
+//                        }) {
+//                            Image(systemName: "barcode")
+//                                .font(.system(size: 24, weight: .bold))
+//                                .padding()
+//                                .background(Color.blue)
+//                                .foregroundColor(.white)
+//                                .clipShape(Circle())
+//                                .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 3)                                                                      
+//                        }
+//                        .sheet(isPresented: $showBarcodeScanner) {
+//                            BarcodeScannerView(scannedCode: $scannedBarcode)
+//                        }
+//                    }
+//                }
+//            }
+//            .background(Color(.systemGroupedBackground).ignoresSafeArea())
             .task {
                 goalCalendar.loadGoals()
             }
