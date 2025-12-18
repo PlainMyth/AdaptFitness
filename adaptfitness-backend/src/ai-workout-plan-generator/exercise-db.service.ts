@@ -14,7 +14,8 @@ import { WorkoutPlan, EnrichmentStats } from './interfaces/workout-plan.interfac
 export class ExerciseDbService {
   private readonly logger = new Logger(ExerciseDbService.name);
   private readonly baseUrl = 'https://exercisedb-api1.p.rapidapi.com/api/v1';
-  private readonly headers: Record<string, string>;
+  private readonly headers: Record<string, string> | null = null;
+  private readonly isEnabled: boolean;
 
   constructor(
     private readonly configService: ConfigService,
@@ -23,20 +24,26 @@ export class ExerciseDbService {
     try {
       const apiKey = this.configService.get<string>('EXERCISEDB_API_KEY');
       if (!apiKey) {
-        throw new Error('EXERCISEDB_API_KEY is not configured');
+        this.logger.warn('EXERCISEDB_API_KEY is not configured. Exercise database enrichment will be disabled.');
+        this.isEnabled = false;
+      } else {
+        this.headers = {
+          'x-rapidapi-key': apiKey,
+          'x-rapidapi-host': 'exercisedb-api1.p.rapidapi.com',
+        };
+        this.isEnabled = true;
+        this.logger.log('ExerciseDB service initialized successfully');
       }
-      this.headers = {
-        'x-rapidapi-key': apiKey,
-        'x-rapidapi-host': 'exercisedb-api1.p.rapidapi.com',
-      };
-      this.logger.log('ExerciseDB service initialized successfully');
     } catch (error) {
       this.logger.error(`Failed to initialize ExerciseDB service: ${error.message}`);
-      throw error;
+      this.isEnabled = false;
     }
   }
 
   async testConnection(): Promise<{ success: boolean; message: string }> {
+    if (!this.isEnabled || !this.headers) {
+      return { success: false, message: 'ExerciseDB service is not enabled. EXERCISEDB_API_KEY is not configured.' };
+    }
     try {
       const url = `${this.baseUrl}/liveness`;
       const response = await firstValueFrom(
@@ -57,6 +64,12 @@ export class ExerciseDbService {
   }
 
   async searchExercises(searchTerm: string): Promise<ExerciseDbSearchResponse> {
+    if (!this.isEnabled || !this.headers) {
+      return {
+        success: false,
+        data: { data: [] },
+      };
+    }
     try {
       if (!searchTerm) {
         return {
@@ -99,6 +112,12 @@ export class ExerciseDbService {
   }
 
   async getExerciseById(exerciseId: string): Promise<ExerciseDetailsResponse> {
+    if (!this.isEnabled || !this.headers) {
+      return {
+        success: false,
+        data: null,
+      };
+    }
     try {
       if (!exerciseId) {
         return {

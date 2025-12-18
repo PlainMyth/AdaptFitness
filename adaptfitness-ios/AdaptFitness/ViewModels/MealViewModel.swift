@@ -36,8 +36,14 @@ class MealViewModel: ObservableObject {
                     method: .get,
                     requiresAuth: true
                 )
-                meals = fetchedMeals
-                isLoading = false
+                await MainActor.run {
+                    meals = fetchedMeals
+                    print("📥 Loaded \(fetchedMeals.count) meals from API")
+                    for meal in fetchedMeals {
+                        print("  - \(meal.name): mealTime='\(meal.mealTime)', date=\(meal.date?.description ?? "nil")")
+                    }
+                    isLoading = false
+                }
             } catch {
                 self.error = error.localizedDescription
                 isLoading = false
@@ -52,6 +58,27 @@ class MealViewModel: ObservableObject {
     func deleteMeals(at offsets: IndexSet) {
         // Note: In a real app, you'd also call the API to delete from the server
         meals.remove(atOffsets: offsets)
+    }
+    
+    func deleteMeal(_ meal: Meal) async {
+        guard authManager.isAuthenticated,
+              let token = authManager.authToken else {
+            error = "Not authenticated"
+            return
+        }
+        
+        Task {
+            do {
+                try await apiService.deleteMeal(id: meal.id, token: token)
+                await MainActor.run {
+                    meals.removeAll { $0.id == meal.id }
+                }
+            } catch {
+                await MainActor.run {
+                    self.error = "Failed to delete meal: \(error.localizedDescription)"
+                }
+            }
+        }
     }
     
     func refreshMeals() {
@@ -103,9 +130,19 @@ class MealViewModel: ObservableObject {
         let calendar = Calendar.current
         let today = Date()
         
-        return meals.filter { meal in
-            guard let mealDate = meal.date else { return false }
-            return calendar.isDate(mealDate, inSameDayAs: today)
+        let filtered = meals.filter { meal in
+            guard let mealDate = meal.date else {
+                print("⚠️ Meal '\(meal.name)' has no valid date. mealTime: '\(meal.mealTime)'")
+                return false
+            }
+            let isToday = calendar.isDate(mealDate, inSameDayAs: today)
+            if !isToday {
+                print("📅 Meal '\(meal.name)' is not today. Date: \(mealDate), Today: \(today)")
+            }
+            return isToday
         }
+        
+        print("✅ Found \(filtered.count) meals for today out of \(meals.count) total meals")
+        return filtered
     }
 }
