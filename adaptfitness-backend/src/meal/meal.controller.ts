@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Request, UseGuards, Query, ValidationPipe } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Request, UseGuards, Query, ValidationPipe, ClassSerializerInterceptor, UseInterceptors } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { MealService } from './meal.service';
 import { FoodService } from './food.service';
@@ -6,6 +6,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateMealDto } from './dto/create-meal.dto';
 import { UpdateMealDto } from './dto/update-meal.dto';
 import { FoodSearchDto } from './dto/food-search.dto';
+import { MealResponseDto } from './dto/meal-response.dto';
+import { plainToInstance } from 'class-transformer';
 
 /**
  * Meal Controller
@@ -31,12 +33,14 @@ export class MealController {
   @Post()
   async create(@Request() req, @Body() createMealDto: CreateMealDto) {
     createMealDto.userId = req.user.id;
-    return this.mealService.create(createMealDto);
+    const meal = await this.mealService.create(createMealDto);
+    return plainToInstance(MealResponseDto, meal, { excludeExtraneousValues: true });
   }
 
   @Get()
   async findAll(@Request() req) {
-    return this.mealService.findAll(req.user.id);
+    const meals = await this.mealService.findAll(req.user.id);
+    return meals.map(meal => plainToInstance(MealResponseDto, meal, { excludeExtraneousValues: true }));
   }
 
   @Get('streak/current')
@@ -72,12 +76,14 @@ export class MealController {
 
   @Get(':id')
   async findOne(@Request() req, @Param('id') id: string) {
-    return this.mealService.findOne(id);
+    const meal = await this.mealService.findOne(id);
+    return plainToInstance(MealResponseDto, meal, { excludeExtraneousValues: true });
   }
 
   @Put(':id')
   async update(@Request() req, @Param('id') id: string, @Body() updateData: UpdateMealDto) {
-    return this.mealService.update(id, updateData);
+    const meal = await this.mealService.update(id, updateData);
+    return plainToInstance(MealResponseDto, meal, { excludeExtraneousValues: true });
   }
 
   @Delete(':id')

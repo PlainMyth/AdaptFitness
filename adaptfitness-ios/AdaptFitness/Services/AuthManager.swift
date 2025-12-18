@@ -65,6 +65,13 @@ class AuthManager: ObservableObject {
         userDefaults.removeObject(forKey: userKey)
     }
     
+    /// Handles token expiration (401 errors) by clearing auth state
+    /// This will automatically redirect the user to the login screen
+    func handleTokenExpiration() {
+        print("⚠️ Token expired or invalid. Logging out...")
+        logout()
+    }
+    
     private func setAuthData(user: User, token: String) async {
         currentUser = user
         authToken = token

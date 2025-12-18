@@ -6,24 +6,31 @@ import { GeminiResponse, GeminiGenerationConfig } from './interfaces/gemini-resp
 @Injectable()
 export class GeminiAiService {
   private readonly logger = new Logger(GeminiAiService.name);
-  private readonly genAI: GoogleGenerativeAI;
+  private readonly genAI: GoogleGenerativeAI | null = null;
   private readonly modelId = 'gemini-2.5-flash';
+  private readonly isEnabled: boolean;
 
   constructor(private readonly configService: ConfigService) {
     try {
       const apiKey = this.configService.get<string>('GEMINI_API_KEY');
       if (!apiKey) {
-        throw new Error('GEMINI_API_KEY is not configured');
+        this.logger.warn('GEMINI_API_KEY is not configured. AI workout plan generation will be disabled.');
+        this.isEnabled = false;
+      } else {
+        this.genAI = new GoogleGenerativeAI(apiKey);
+        this.isEnabled = true;
+        this.logger.log('Gemini AI service initialized successfully');
       }
-      this.genAI = new GoogleGenerativeAI(apiKey);
-      this.logger.log('Gemini AI service initialized successfully');
     } catch (error) {
       this.logger.error(`Failed to initialize Gemini AI service: ${error.message}`);
-      throw error;
+      this.isEnabled = false;
     }
   }
 
   async testConnection(): Promise<{ success: boolean; message: string }> {
+    if (!this.isEnabled || !this.genAI) {
+      return { success: false, message: 'Gemini AI service is not enabled. GEMINI_API_KEY is not configured.' };
+    }
     try {
       const model = this.genAI.getGenerativeModel({ model: this.modelId });
       const result = await model.generateContent('Hello, are you working?');
@@ -44,6 +51,12 @@ export class GeminiAiService {
     daysPerWeek: number,
     userProfile: { age?: number; gender?: string; weight?: number; height?: number },
   ): Promise<GeminiResponse> {
+    if (!this.isEnabled || !this.genAI) {
+      return {
+        success: false,
+        error: 'Gemini AI service is not enabled. GEMINI_API_KEY is not configured.',
+      };
+    }
     try {
       const prompt = this.createWorkoutPlanPrompt(userGoal, experienceLevel, daysPerWeek, userProfile);
 
