@@ -159,8 +159,9 @@ export class MealService {
       throw new BadRequestException('Meal name is required and cannot be empty');
     }
     
-    if (!dto.description || dto.description.trim().length === 0) {
-      throw new BadRequestException('Meal description is required and cannot be empty');
+    // Description is optional, but if provided, it shouldn't be empty
+    if (dto.description !== undefined && dto.description !== null && dto.description.trim().length === 0) {
+      throw new BadRequestException('Meal description cannot be empty if provided');
     }
     
     if (!dto.mealTime) {

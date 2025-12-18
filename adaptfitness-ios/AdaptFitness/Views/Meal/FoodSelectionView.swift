@@ -11,6 +11,7 @@ struct FoodSelectionView: View {
     @Binding var selectedFood: SimplifiedFoodItem?
     
     @State private var isSearching: Bool = false
+    @State private var searchTask: Task<Void, Never>?
     
     var body: some View {
         NavigationView {
@@ -24,21 +25,40 @@ struct FoodSelectionView: View {
                         TextField("Chicken Sandwich", text: $viewModel.searchQuery)
                             .textFieldStyle(PlainTextFieldStyle())
                             .onSubmit {
-                                Task {
+                                // Search immediately when user presses enter
+                                searchTask?.cancel()
+                                searchTask = Task {
                                     await viewModel.searchFoods()
                                 }
                             }
-                            .onChange(of: viewModel.searchQuery) { newValue in
-                                // Debounce search - only search after user stops typing for 1 second
+                            .onChange(of: viewModel.searchQuery) { oldValue, newValue in
+                                // Cancel previous search task
+                                searchTask?.cancel()
+                                
+                                // Clear error message when user types (cancelled searches are expected)
+                                if !newValue.isEmpty {
+                                    viewModel.errorMessage = nil
+                                }
+                                
                                 if newValue.count >= 2 {
-                                    Task {
-                                        try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
-                                        if viewModel.searchQuery == newValue {
-                                            await viewModel.searchFoods()
+                                    // Debounce search - only search after user stops typing for 300ms
+                                    searchTask = Task { @MainActor in
+                                        do {
+                                            try await Task.sleep(nanoseconds: 300_000_000) // 300ms
+                                            // Check if task was cancelled or query changed
+                                            try Task.checkCancellation()
+                                            if viewModel.searchQuery == newValue {
+                                                await viewModel.searchFoods()
+                                            }
+                                        } catch is CancellationError {
+                                            // Expected cancellation - ignore
+                                        } catch {
+                                            // Ignore other errors (like sleep interruption)
                                         }
                                     }
                                 } else {
                                     viewModel.searchResults = []
+                                    viewModel.errorMessage = nil
                                 }
                             }
                         
