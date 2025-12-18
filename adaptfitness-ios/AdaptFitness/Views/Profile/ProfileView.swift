@@ -11,6 +11,9 @@ struct ProfileView: View {
     @StateObject private var authManager = AuthManager.shared
     @State private var showingLogin = false
     @State private var showingHealthMetrics = false
+    @State private var showingAccountSettings = false
+    @State private var showingNotifications = false
+    @State private var showingPrivacySecurity = false
     @Environment(\.presentationMode) var presentationMode
     
     var body: some View {
@@ -67,9 +70,9 @@ struct ProfileView: View {
                                 .padding(.vertical, 4)
                             }
                             
-                            // Account Settings (placeholder for future features)
+                            // Account Settings
                             Button(action: {
-                                // TODO: Add account settings view
+                                showingAccountSettings = true
                             }) {
                                 HStack {
                                     Image(systemName: "person.circle.fill")
@@ -96,9 +99,9 @@ struct ProfileView: View {
                                 .padding(.vertical, 4)
                             }
                             
-                            // Notifications (placeholder for future features)
+                            // Notifications
                             Button(action: {
-                                // TODO: Add notifications settings view
+                                showingNotifications = true
                             }) {
                                 HStack {
                                     Image(systemName: "bell.fill")
@@ -125,9 +128,9 @@ struct ProfileView: View {
                                 .padding(.vertical, 4)
                             }
                             
-                            // Privacy & Security (placeholder for future features)
+                            // Privacy & Security
                             Button(action: {
-                                // TODO: Add privacy settings view
+                                showingPrivacySecurity = true
                             }) {
                                 HStack {
                                     Image(systemName: "lock.shield.fill")
@@ -219,8 +222,23 @@ struct ProfileView: View {
             .sheet(isPresented: $showingLogin) {
                 LoginView()
             }
+            .onChange(of: authManager.isAuthenticated) { oldValue, newValue in
+                // Auto-dismiss login sheet when user successfully logs in
+                if newValue {
+                    showingLogin = false
+                }
+            }
             .sheet(isPresented: $showingHealthMetrics) {
                 HealthMetricsView()
+            }
+            .sheet(isPresented: $showingAccountSettings) {
+                AccountSettingsView()
+            }
+            .sheet(isPresented: $showingNotifications) {
+                NotificationsSettingsView()
+            }
+            .sheet(isPresented: $showingPrivacySecurity) {
+                PrivacySecurityView()
             }
         }
     }

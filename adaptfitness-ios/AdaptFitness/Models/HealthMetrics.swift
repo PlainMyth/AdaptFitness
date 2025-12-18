@@ -200,6 +200,36 @@ struct HealthMetrics: Codable, Identifiable {
         guard let deficit = calorieDeficit else { return "N/A" }
         return String(format: "%.0f", deficit)
     }
+    
+    // MARK: - Weight Conversion Helpers (kg to lbs)
+    
+    /// Convert kilograms to pounds
+    private func kgToLbs(_ kg: Double) -> Double {
+        return kg * 2.20462
+    }
+    
+    /// Current weight in pounds
+    var currentWeightLbs: Double {
+        return kgToLbs(currentWeight)
+    }
+    
+    /// Goal weight in pounds (if exists)
+    var goalWeightLbs: Double? {
+        guard let goal = goalWeight else { return nil }
+        return kgToLbs(goal)
+    }
+    
+    /// Lean body mass in pounds (if exists)
+    var leanBodyMassLbs: Double? {
+        guard let lean = leanBodyMass else { return nil }
+        return kgToLbs(lean)
+    }
+    
+    /// Skeletal muscle mass in pounds (if exists)
+    var skeletalMuscleMassLbs: Double? {
+        guard let muscle = skeletalMuscleMass else { return nil }
+        return kgToLbs(muscle)
+    }
 }
 
 /// Simplified calculated metrics response

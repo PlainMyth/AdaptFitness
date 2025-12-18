@@ -11,19 +11,28 @@ import Combine
 class APIService: ObservableObject {
     static let shared = APIService()
     
-    // Universal configuration that works for everyone
-    // - iOS Simulator: Uses localhost (works universally)
-    // - Physical Device: Uses production URL (works from anywhere)
-    // - Can be overridden via environment variables or build settings
+    // Smart URL configuration that supports both localhost and Railway
+    // - Tries localhost first (for local development)
+    // - Falls back to Railway production (always works)
+    // - Works on both simulator and physical devices
     private var baseURL: String {
-        // Check if running on simulator
+        // Check if running on simulator - can use localhost
         #if targetEnvironment(simulator)
-        // // Simulator can connect to localhost - works for everyone
+            // Simulator: Try localhost first, fallback to Railway
+            // You can change this to always use Railway by returning the Railway URL
             return "http://localhost:3000"
         #else
-        // Physical device uses production URL - works universally
+            // Physical device: Use Railway (localhost doesn't work on real devices)
             return "https://adaptfitness-production.up.railway.app"
         #endif
+    }
+    
+    // Railway production URL (always available)
+    private let railwayURL = "https://adaptfitness-production.up.railway.app"
+    
+    // Helper to get Railway URL if localhost fails
+    private func getFallbackURL() -> String {
+        return railwayURL
     }
     
     private let session = URLSession.shared
@@ -201,11 +210,7 @@ class APIService: ObservableObject {
             case .timedOut:
                 throw APIError.httpError(0, message: "Connection timed out. The server may be slow or unavailable.")
             case .cannotConnectToHost, .cannotFindHost:
-                #if targetEnvironment(simulator)
-                throw APIError.httpError(0, message: "Could not connect to server. Make sure the backend is running on localhost:3000")
-                #else
-                throw APIError.httpError(0, message: "Could not connect to server. Please check your internet connection.")
-                #endif
+                throw APIError.httpError(0, message: "Could not connect to server.")
             default:
                 throw APIError.httpError(0, message: "Network error: \(urlError.localizedDescription)")
             }
@@ -295,11 +300,7 @@ class APIService: ObservableObject {
             case .timedOut:
                 throw APIError.httpError(0, message: "Connection timed out. The server may be slow or unavailable.")
             case .cannotConnectToHost, .cannotFindHost:
-                #if targetEnvironment(simulator)
-                throw APIError.httpError(0, message: "Could not connect to server. Make sure the backend is running on localhost:3000")
-                #else
-                throw APIError.httpError(0, message: "Could not connect to server. Please check your internet connection.")
-                #endif
+                throw APIError.httpError(0, message: "Could not connect to server.")
             default:
                 throw APIError.httpError(0, message: "Network error: \(urlError.localizedDescription)")
             }
@@ -463,7 +464,36 @@ class APIService: ObservableObject {
         body: T? = nil,
         responseType: R.Type
     ) async throws -> R {
-        guard let url = URL(string: baseURL + endpoint) else {
+        // Try with current baseURL first (localhost for simulator)
+        do {
+            return try await performRequestWithURL(
+                urlString: baseURL + endpoint,
+                method: method,
+                body: body,
+                responseType: responseType
+            )
+        } catch let error as URLError where error.code == .cannotConnectToHost || error.code == .timedOut {
+            // If localhost fails, try Railway as fallback
+            if baseURL.contains("localhost") {
+                print("⚠️ Localhost connection failed, trying Railway...")
+                return try await performRequestWithURL(
+                    urlString: railwayURL + endpoint,
+                    method: method,
+                    body: body,
+                    responseType: responseType
+                )
+            }
+            throw error
+        }
+    }
+    
+    private func performRequestWithURL<T: Codable, R: Codable>(
+        urlString: String,
+        method: String,
+        body: T? = nil,
+        responseType: R.Type
+    ) async throws -> R {
+        guard let url = URL(string: urlString) else {
             throw APIError.invalidURL
         }
         
@@ -502,11 +532,7 @@ class APIService: ObservableObject {
             case .timedOut:
                 throw APIError.httpError(0, message: "Connection timed out. The server may be slow or unavailable.")
             case .cannotConnectToHost, .cannotFindHost:
-                #if targetEnvironment(simulator)
-                throw APIError.httpError(0, message: "Could not connect to server. Make sure the backend is running on localhost:3000")
-                #else
-                throw APIError.httpError(0, message: "Could not connect to server. Please check your internet connection.")
-                #endif
+                throw APIError.httpError(0, message: "Could not connect to server.")
             default:
                 throw APIError.httpError(0, message: "Network error: \(urlError.localizedDescription)")
             }
@@ -526,7 +552,39 @@ class APIService: ObservableObject {
         token: String,
         responseType: R.Type
     ) async throws -> R {
-        guard let url = URL(string: baseURL + endpoint) else {
+        // Try with current baseURL first (localhost for simulator)
+        do {
+            return try await performAuthenticatedRequestWithURL(
+                urlString: baseURL + endpoint,
+                method: method,
+                body: body,
+                token: token,
+                responseType: responseType
+            )
+        } catch let error as URLError where error.code == .cannotConnectToHost || error.code == .timedOut {
+            // If localhost fails, try Railway as fallback
+            if baseURL.contains("localhost") {
+                print("⚠️ Localhost connection failed, trying Railway...")
+                return try await performAuthenticatedRequestWithURL(
+                    urlString: railwayURL + endpoint,
+                    method: method,
+                    body: body,
+                    token: token,
+                    responseType: responseType
+                )
+            }
+            throw error
+        }
+    }
+    
+    private func performAuthenticatedRequestWithURL<T: Codable, R: Codable>(
+        urlString: String,
+        method: String,
+        body: T? = nil,
+        token: String,
+        responseType: R.Type
+    ) async throws -> R {
+        guard let url = URL(string: urlString) else {
             throw APIError.invalidURL
         }
         
@@ -590,11 +648,7 @@ class APIService: ObservableObject {
             case .timedOut:
                 throw APIError.httpError(0, message: "Connection timed out. The server may be slow or unavailable.")
             case .cannotConnectToHost, .cannotFindHost:
-                #if targetEnvironment(simulator)
-                throw APIError.httpError(0, message: "Could not connect to server. Make sure the backend is running on localhost:3000")
-                #else
-                throw APIError.httpError(0, message: "Could not connect to server. Please check your internet connection.")
-                #endif
+                throw APIError.httpError(0, message: "Could not connect to server.")
             default:
                 throw APIError.httpError(0, message: "Network error: \(urlError.localizedDescription)")
             }
@@ -672,11 +726,7 @@ class APIService: ObservableObject {
             case .timedOut:
                 throw APIError.httpError(0, message: "Connection timed out. The server may be slow or unavailable.")
             case .cannotConnectToHost, .cannotFindHost:
-                #if targetEnvironment(simulator)
-                throw APIError.httpError(0, message: "Could not connect to server. Make sure the backend is running on localhost:3000")
-                #else
-                throw APIError.httpError(0, message: "Could not connect to server. Please check your internet connection.")
-                #endif
+                throw APIError.httpError(0, message: "Could not connect to server.")
             default:
                 throw APIError.httpError(0, message: "Network error: \(urlError.localizedDescription)")
             }

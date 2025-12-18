@@ -11,11 +11,25 @@ struct HomeView: View {
     @ObservedObject private var authManager = AuthManager.shared
     
     var body: some View {
-        if let user = authManager.currentUser {
-            HomePageView(isLoggedIn: .constant(true), user: user)
-        } else {
-            // Fallback if user not loaded yet
-            ProgressView("Loading...")
+        Group {
+            if authManager.isAutoLoggingIn {
+                // Show loading screen while attempting auto-login
+                VStack(spacing: 20) {
+                    ProgressView()
+                        .scaleEffect(1.5)
+                    Text("Signing you in...")
+                        .font(.headline)
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color(.systemBackground))
+            } else {
+                // Always show home screen, use example user if not authenticated
+                HomePageView(
+                    isLoggedIn: .constant(authManager.isAuthenticated),
+                    user: authManager.currentUser ?? User.exampleUser
+                )
+            }
         }
     }
 }
