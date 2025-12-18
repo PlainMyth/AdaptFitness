@@ -142,7 +142,6 @@ struct MealTrackerMainView: View {
                             }
                         }
                         .padding(.horizontal)
-                        .padding(.top)
                     }
                     
                     // Your Goals Section

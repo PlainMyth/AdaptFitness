@@ -75,6 +75,7 @@ struct HomePageView: View {
             FooterTabBar(selectedTab: $selectedTab)
         }
         .edgesIgnoringSafeArea(.bottom)
+        .padding(.vertical, 1)
         .overlay(
             // Settings button in top-left corner
             VStack {
@@ -96,6 +97,7 @@ struct HomePageView: View {
             ProfileView()
         }
     }
+        
     
     var homeContent: some View {
         VStack {
@@ -133,7 +135,7 @@ struct HomePageView: View {
                         //So we should check all the previous days until we go back to Monday                                                                   
                         let mockCompletedDates: [Date] = [
                             calendar.date(byAdding: .day, value: -2, to: Date())!,                                                                              
-                            calendar.date(byAdding: .day, value: 1, to: Date())!,                                                                               
+//                            calendar.date(byAdding: .day, value: 1, to: Date())!,                                                                               
                             Date()
                         ]
                         days = generateCurrentWeek(completedWorkouts:mockCompletedDates)                                                                        

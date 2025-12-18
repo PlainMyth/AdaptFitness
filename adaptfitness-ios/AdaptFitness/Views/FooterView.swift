@@ -83,7 +83,7 @@ struct FooterTabBar: View {
         .sheet(isPresented: $showingProfile) {
             ProfileView()
         }
-
+        .padding(.top)
 //        .background(Color(UIColor.systemGray6))
         .cornerRadius(12)
 //        .shadow(radius: 3)
