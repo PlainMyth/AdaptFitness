@@ -69,6 +69,12 @@ enum WorkoutType: String, Codable, CaseIterable {
     }
 }
 
+extension String {
+    var asWorkoutType: WorkoutType? {
+        WorkoutType(rawValue: self)
+    }
+}
+
 struct CreateWorkoutRequest: Codable {
     let name: String
     let description: String?

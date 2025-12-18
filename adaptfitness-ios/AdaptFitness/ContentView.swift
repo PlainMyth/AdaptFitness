@@ -11,7 +11,6 @@ struct ContentView: View {
     @StateObject private var authManager = AuthManager.shared
     
     var body: some View {
-//        TabView {
             HomeView()
 //                .tabItem {
 //                    Image(systemName: "house.fill")

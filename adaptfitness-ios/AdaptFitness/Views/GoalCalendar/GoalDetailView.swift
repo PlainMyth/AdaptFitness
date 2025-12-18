@@ -18,16 +18,16 @@ struct GoalDetailView: View {
                     // Header
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
-                            Image(systemName: goal.goalType.icon)
+                            Image(systemName: goal.goalTypeEnum?.icon ?? "questionmark.circle")
                                 .font(.title)
                                 .foregroundColor(.blue)
                             
                             VStack(alignment: .leading) {
-                                Text(goal.description ?? goal.goalType.displayName)
+                                Text(goal.description ?? goal.goalTypeEnum?.displayName ?? "questionmark.circle")
                                     .font(.title2)
                                     .fontWeight(.bold)
                                 
-                                if let workoutType = goal.workoutType {
+                                if let workoutType = goal.workoutTypeEnum {
                                     Text(workoutType.displayName)
                                         .font(.subheadline)
                                         .foregroundColor(.secondary)
@@ -53,7 +53,7 @@ struct GoalDetailView: View {
                         
                         VStack(spacing: 8) {
                             HStack {
-                                Text("\(Int(goal.completionPercentage))%")
+                                Text("\(Int(goal.completionFraction))%")
                                     .font(.title)
                                     .fontWeight(.bold)
                                     .foregroundColor(progressColor)
@@ -69,7 +69,7 @@ struct GoalDetailView: View {
                                     .cornerRadius(8)
                             }
                             
-                            ProgressView(value: goal.completionPercentage / 100)
+                            ProgressView(value: goal.completionFraction)
                                 .progressViewStyle(LinearProgressViewStyle(tint: progressColor))
                             
                             Text("\(Int(goal.currentValue)) / \(Int(goal.targetValue)) \(goal.unit)")
@@ -87,7 +87,7 @@ struct GoalDetailView: View {
                             .font(.headline)
                             .fontWeight(.semibold)
                         
-                        DetailRow(title: "Goal Type", value: goal.goalType.displayName)
+                        DetailRow(title: "Goal Type", value: goal.goalTypeEnum?.icon ?? "questionmark.circle")
                         DetailRow(title: "Target", value: "\(Int(goal.targetValue)) \(goal.unit)")
                         DetailRow(title: "Current", value: "\(Int(goal.currentValue)) \(goal.unit)")
                         DetailRow(title: "Status", value: goal.isCompleted ? "Completed" : "In Progress")
@@ -187,25 +187,25 @@ struct DetailRow: View {
 }
 
 #Preview {
-    let sampleGoal = GoalCalendar(
-        id: "1",
-        userId: "user1",
-        weekStartDate: "2025-10-13T00:00:00Z",
-        weekEndDate: "2025-10-19T00:00:00Z",
-        goalType: .workoutsCount,
-        targetValue: 5,
-        currentValue: 3,
-        completionPercentage: 60,
-        isCompleted: false,
-        isActive: true,
-        description: "Complete 5 workouts this week",
-        workoutType: nil,
-        progressHistory: [
-            ProgressEntry(date: "2025-10-15", value: 3, completionPercentage: 60)
-        ],
-        createdAt: "2025-10-13T00:00:00Z",
-        updatedAt: "2025-10-15T00:00:00Z"
-    )
-    
-    GoalDetailView(goal: sampleGoal)
+//    let sampleGoal = GoalCalendar(
+//        id: "1",
+//        userId: "user1",
+//        weekStartDate: "2025-10-13T00:00:00Z",
+//        weekEndDate: "2025-10-19T00:00:00Z",
+//        goalType: .workoutsCount,
+//        targetValue: 5,
+//        currentValue: 3,
+//        completionPercentage: 60,
+//        isCompleted: false,
+//        isActive: true,
+//        description: "Complete 5 workouts this week",
+//        workoutType: nil,
+//        progressHistory: [
+//            ProgressEntry(date: "2025-10-15", value: 3, completionPercentage: 60)
+//        ],
+//        createdAt: "2025-10-13T00:00:00Z",
+//        updatedAt: "2025-10-15T00:00:00Z"
+//    )
+//    
+//    GoalDetailView(goal: sampleGoal)
 }

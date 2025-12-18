@@ -180,17 +180,18 @@ struct GoalCardView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Image(systemName: goal.goalType.icon)
+                Image(systemName: goal.goalTypeEnum?.icon ?? "questionmark.circle")
+
                     .foregroundColor(.blue)
                     .font(.title2)
                 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(goal.description ?? goal.goalType.displayName)
+                    Text(goal.description ?? goal.goalTypeEnum?.displayName ?? "Goal")
                         .font(.headline)
                         .lineLimit(2)
                     
-                    if let workoutType = goal.workoutType {
-                        Text(workoutType.displayName)
+                    if let type = goal.workoutType?.asWorkoutType {
+                        Text(type.displayName)
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
@@ -211,7 +212,7 @@ struct GoalCardView: View {
             }
             
             // Progress Bar
-            ProgressView(value: goal.completionPercentage / 100)
+            ProgressView(value: goal.completionFraction)
                 .progressViewStyle(LinearProgressViewStyle(tint: progressColor))
             
             HStack {
@@ -248,12 +249,13 @@ struct GoalRowView: View {
     
     var body: some View {
         HStack {
-            Image(systemName: goal.goalType.icon)
+            Image(systemName: goal.goalTypeEnum?.icon ?? "questionmark.circle")
+
                 .foregroundColor(.blue)
                 .frame(width: 20)
             
             VStack(alignment: .leading, spacing: 2) {
-                Text(goal.description ?? goal.goalType.displayName)
+                Text(goal.description ?? goal.goalTypeEnum?.displayName ?? "Goal")
                     .font(.body)
                     .lineLimit(1)
                 

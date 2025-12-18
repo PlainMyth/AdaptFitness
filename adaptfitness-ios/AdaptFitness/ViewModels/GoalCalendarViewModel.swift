@@ -32,38 +32,46 @@ class GoalCalendarViewModel: ObservableObject {
         
         Task { @MainActor in
             do {
-                // Use the new APIService.request() method with generic endpoints
                 async let allGoalsTask: [GoalCalendar] = apiService.request(
                     endpoint: "/goal-calendar",
                     method: .get,
                     requiresAuth: true
                 )
-                
+
                 async let currentWeekGoalsTask: [GoalCalendar] = apiService.request(
                     endpoint: "/goal-calendar/current-week",
                     method: .get,
                     requiresAuth: true
                 )
-                
-                // Decode GoalStatistics separately to avoid MainActor concurrency warning
-                // GoalStatistics is a simple Codable struct that doesn't need MainActor isolation
+
                 let statisticsResult: GoalStatistics = try await apiService.request(
                     endpoint: "/goal-calendar/statistics",
                     method: .get,
                     requiresAuth: true
                 )
-                
+
                 let (allGoalsResult, currentWeekGoalsResult) = await (
                     try allGoalsTask,
                     try currentWeekGoalsTask
                 )
-                
-                // Update @Published properties (already on MainActor)
+
+                // 👇 DEBUG PRINTS
+                print("✅ All Goals:")
+                allGoalsResult.forEach { print($0) }
+
+                print("📅 Current Week Goals:")
+                currentWeekGoalsResult.forEach { print($0) }
+
+                print("📊 Statistics:")
+                print(statisticsResult)
+
+                // Update @Published properties
                 allGoals = allGoalsResult
                 currentWeekGoals = currentWeekGoalsResult
                 statistics = statisticsResult
                 isLoading = false
             } catch {
+                print("❌ Load goals error:", error)
                 self.error = error.localizedDescription
                 isLoading = false
             }
@@ -113,7 +121,7 @@ class GoalCalendarViewModel: ObservableObject {
     }
     
     func getGoalsByType(_ goalType: GoalType) -> [GoalCalendar] {
-        return allGoals.filter { $0.goalType == goalType }
+        return allGoals.filter { $0.goalType == goalType.rawValue }
     }
     
     func getCompletedGoals() -> [GoalCalendar] {
@@ -126,12 +134,17 @@ class GoalCalendarViewModel: ObservableObject {
     
     var averageCompletionRate: Double {
         guard !allGoals.isEmpty else { return 0 }
-        return allGoals.reduce(0) { $0 + $1.completionPercentage } / Double(allGoals.count)
+        return allGoals.reduce(0) { $0 + $1.completionPercentageDouble } / Double(allGoals.count)
     }
     
     var mostCommonGoalType: GoalType? {
-        let goalTypeCounts = Dictionary(grouping: allGoals, by: { $0.goalType })
-        return goalTypeCounts.max { $0.value.count < $1.value.count }?.key
+        let goalTypeCounts: [String: [GoalCalendar]] = Dictionary(grouping: allGoals, by: { $0.goalType })
+
+        if let mostCommonRaw = goalTypeCounts.max(by: { $0.value.count < $1.value.count })?.key {
+            return GoalType(rawValue: mostCommonRaw)
+        }
+        return nil
+
     }
     
     func getGoalsForWeek(startDate: Date, endDate: Date) -> [GoalCalendar] {
