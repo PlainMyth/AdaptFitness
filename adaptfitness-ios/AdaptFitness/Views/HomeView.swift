@@ -132,32 +132,8 @@ struct HomePageView: View {
                 .padding(.horizontal)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 40) {
-                    ForEach(goals) { goal in
-                        GoalTileView(goal: goal, color: .blue)
-                    }
-//                  GOAL FORM =================================
-                    Button(action: {
-                            showingAddGoalForm = true
-                    }) {
-                            VStack(spacing: 10) {
-                                ZStack {
-                                    Circle()
-                                        .stroke(Color.gray.opacity(0.2), lineWidth: 10)                                                                         
-                                        .frame(width: 80, height: 80)
-
-                                    Image(systemName: "plus")
-                                        .font(.system(size: 24, weight: .bold))
-                                        .foregroundColor(.gray)
-                                }
-                                Text("Add Goal")
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                            }
-                            .frame(width: 120)
-                        }
-                        .buttonStyle(PlainButtonStyle()) // removes default button styling                                                                      
-                        .sheet(isPresented: $showingAddGoalForm) {
-                            AddGoalForm(goals: $goals)
+                        ForEach(goals) { goal in
+                            GoalTileView(goal: goal, color: .blue)
                         }
                     }
                 }
