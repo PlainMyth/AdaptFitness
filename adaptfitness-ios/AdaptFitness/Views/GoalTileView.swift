@@ -11,16 +11,17 @@ struct GoalTileView: View {
     let goal: GoalCalendar
     let color: Color
 
-    // Safely clamp progress between 0 and 1
+    // Clamp progress between 0 and 1
     private var progressRatio: Double {
         min(max(goal.completionFraction, 0), 1)
     }
 
     var body: some View {
         HStack(spacing: 12) {
-
-            // Progress Ring
+            Text("Hstack GoalTileView")
+            // MARK: Progress Ring
             ZStack {
+                Text("Zstack GoalTileView")
                 Circle()
                     .stroke(Color.gray.opacity(0.2), lineWidth: 10)
 
@@ -38,33 +39,50 @@ struct GoalTileView: View {
                         .foregroundColor(color)
                         .font(.system(size: 18))
 
-                    Text("\(Int(goal.completionPercentage))%")
+                    Text("\(Int(goal.completionPercentageDouble))%")
                         .font(.headline)
                 }
             }
             .frame(width: 80, height: 80)
 
-            // Goal Info
+            // MARK: Goal Info
             VStack(alignment: .leading, spacing: 6) {
-                Text(goal.goalTypeEnum?.displayName ?? "questionmark.circle")
+                // Description or goal type name
+                Text(goal.description ?? goal.goalTypeEnum?.displayName ?? "Unknown Goal")
                     .font(.headline)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
 
-                Text("Target: \(Int(goal.targetValue)) \(goal.goalTypeEnum?.unit ?? "questionmark.circle")")
+                // Target
+                Text("Target: \(Int(goal.targetValueDouble)) \(goal.goalTypeEnum?.unit ?? "")")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
 
-                if let workoutType = goal.workoutType {
-                    Text("Workout: \(goal.goalTypeEnum?.displayName ?? "questionmark.circle")")
+                // Optional workout type
+                if let workoutType = goal.workoutTypeEnum {
+                    Text("Workout: \(workoutType.displayName)")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.orange)
                 }
 
+                // Progress bar
+                ProgressView(value: progressRatio)
+                    .progressViewStyle(LinearProgressViewStyle(tint: color))
+                    .frame(height: 6)
+                    .cornerRadius(3)
+
+                // Active / Inactive
                 Text(goal.isActive ? "Active" : "Inactive")
                     .font(.caption)
                     .foregroundColor(goal.isActive ? .green : .gray)
             }
+            .padding(.vertical, 4)
         }
-        .padding(.vertical, 10)
-        .frame(width: 260, height: 120)
+        .padding()
+        .frame(width: 280, height: 140)
+        .background(Color(.systemBackground))
+        .cornerRadius(12)
+        .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 2)
     }
 }
+

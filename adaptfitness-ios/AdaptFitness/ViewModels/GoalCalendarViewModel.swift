@@ -162,3 +162,20 @@ class GoalCalendarViewModel: ObservableObject {
         }
     }
 }
+
+// um idk
+//extension GoalCalendarViewModel {
+//    var currentWeekGoals: [GoalCalendar] {
+//        let today = Date()
+//        let formatter = DateFormatter()
+//        formatter.dateFormat = "yyyy-MM-dd"
+//
+//        return allGoals.filter { goal in
+//            guard let start = formatter.date(from: goal.weekStartDate),
+//                  let end = formatter.date(from: goal.weekEndDate) else {
+//                return false
+//            }
+//            return today >= start && today <= end
+//        }
+//    }
+//}

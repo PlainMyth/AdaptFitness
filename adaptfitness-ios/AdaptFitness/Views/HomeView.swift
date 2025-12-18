@@ -126,8 +126,9 @@ struct HomePageView: View {
                     }
             }
             
-//          GOAL BAR =================================
+//          MARK: GOAL BAR ============
             
+            // MARK: Goals Horizontal Scroll
             Text("Goals")
                 .font(.title)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -140,14 +141,20 @@ struct HomePageView: View {
                 Text(error)
                     .foregroundColor(.red)
                     .padding(.horizontal)
+//            } else if goalCalendar.currentWeekGoals.isEmpty {
+//                Text("No goals for this week.")
+//                    .foregroundColor(.secondary)
+//                    .padding(.horizontal)
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 40) {
-                        ForEach(goalCalendar.currentWeekGoals) { goal in
+                    HStack(spacing: 16) {
+                        ForEach(goalCalendar.allGoals) { goal in
                             GoalTileView(goal: goal, color: .blue)
+                                .frame(width: 280) // consistent width for each tile
                         }
                     }
                     .padding(.horizontal)
+                    .padding(.vertical, 8)
                 }
             }
             
