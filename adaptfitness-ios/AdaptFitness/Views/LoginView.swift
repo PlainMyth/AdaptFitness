@@ -15,6 +15,15 @@ struct LoginView: View {
     @State private var rememberMe: Bool = false
     @State private var showRegisterView: Bool = false
     
+    // Load saved credentials on appear
+    private func loadSavedCredentials() {
+        if let saved = authManager.getSavedCredentials() {
+            email = saved.email
+            password = saved.password
+            rememberMe = true
+        }
+    }
+    
     var body: some View {
         NavigationView {
             VStack(spacing: 20) {
@@ -22,7 +31,6 @@ struct LoginView: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: 120, height: 120)
-                    .clipShape(Circle())
                 
                 Text("Welcome Back")
                     .font(.largeTitle)
@@ -46,6 +54,12 @@ struct LoginView: View {
                 Toggle("Remember Me", isOn: $rememberMe)
                     .padding(.horizontal)
                     .disabled(authManager.isLoading)
+                    .onChange(of: rememberMe) { oldValue, newValue in
+                        // Clear saved credentials if user turns off Remember Me
+                        if !newValue {
+                            authManager.clearSavedCredentials()
+                        }
+                    }
                 
                 // Error message
                 if let errorMessage = authManager.errorMessage {
@@ -82,6 +96,9 @@ struct LoginView: View {
                 .padding(.top, 10)
             }
             .padding()
+            .onAppear {
+                loadSavedCredentials()
+            }
             .sheet(isPresented: $showRegisterView) {
                 RegisterView()
             }
@@ -99,8 +116,7 @@ struct LoginView: View {
     private func handleLogin() {
         Task {
             do {
-                try await authManager.login(email: email, password: password)
-                // isLoggedIn will be set by onChange observer
+                try await authManager.login(email: email, password: password, rememberMe: rememberMe)
             } catch {
                 // Error is already set in authManager.errorMessage
                 print("Login failed: \(error)")

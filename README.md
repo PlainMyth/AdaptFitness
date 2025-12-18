@@ -1,12 +1,12 @@
 # 🏋️ UltimateFitness
 
-<img width="1000" height="1000" alt="AdaptFitness Logo" src="https://github.com/user-attachments/assets/da7cba4d-9e02-4dc0-ada0-f6d4eca0f439" />
+<img width="500" height="500" alt="UltimateFitness Logo" src="UltimateFitness_Logo_Gradient.png" />
 
 A fitness app that redefines the functionality and ease of getting into fitness!
 
 ## 🎯 **Project Overview**
 
-AdaptFitness is a comprehensive fitness tracking application built for the CPSC 491 Capstone Project. It combines workout tracking, nutrition logging, and progress analytics to help users achieve their fitness goals.
+UltimateFitness is a comprehensive fitness tracking application built for the CPSC 491 Capstone Project. It combines workout tracking, nutrition logging, and progress analytics to help users achieve their fitness goals.
 
 ## 🚀 **Current Status**
 
@@ -37,8 +37,8 @@ AdaptFitness is a comprehensive fitness tracking application built for the CPSC 
 ### **Setup Instructions**
 ```bash
 # Clone the repository
-git clone https://github.com/PlainMyth/AdaptFitness.git
-cd AdaptFitness
+git clone https://github.com/UltimateFitness/UltimateFitness.git
+cd UltimateFitness
 
 # Navigate to backend
 cd adaptfitness-backend
@@ -51,7 +51,7 @@ cp env.example .env
 # Edit .env with your database credentials
 
 # Create PostgreSQL database
-createdb adaptfitness
+createdb ultimatefitness
 
 # Start the development server
 npm run start:dev
@@ -108,7 +108,7 @@ npm run test:cov
 ## 📁 **Project Structure**
 
 ```
-AdaptFitness/
+UltimateFitness/
 ├── adaptfitness-backend/     # NestJS Backend API
 │   ├── src/
 │   │   ├── auth/            # Authentication system
@@ -118,7 +118,7 @@ AdaptFitness/
 │   │   └── main.ts          # App entry point
 │   ├── package.json         # Dependencies
 │   └── README.md           # Backend documentation
-├── adaptfitness-ios/        # iOS Frontend (Future)
+├── adaptfitness-ios/        # iOS Frontend
 ├── ai-context/              # Project documentation
 ├── SETUP.md                 # Setup instructions
 └── PROJECT_STATUS.md        # Project status and roadmap

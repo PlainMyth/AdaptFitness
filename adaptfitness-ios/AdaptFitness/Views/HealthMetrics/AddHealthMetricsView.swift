@@ -40,14 +40,14 @@ struct AddHealthMetricsView: View {
     // All fields are stored as String for TextField binding
     // Converted to Double when creating the DTO
     
-    /// Current weight input (required)
-    /// Must be valid number between 0-500 kg
+    /// Current weight input (required, in pounds)
+    /// Must be valid number between 0-1100 lbs (converted to kg for backend)
     @State private var currentWeight: String = ""
     
     /// Body fat percentage input (optional, 0-100)
     @State private var bodyFatPercentage: String = ""
     
-    /// Goal weight input (optional)
+    /// Goal weight input (optional, in pounds)
     @State private var goalWeight: String = ""
     
     /// Water percentage input (optional, 0-100)
@@ -80,9 +80,9 @@ struct AddHealthMetricsView: View {
         NavigationView {
             Form {
                 // MARK: - Required Section
-                // Only currentWeight is required
+                // Only currentWeight is required (in pounds)
                 Section(header: Text("Required")) {
-                    TextField("Current Weight (kg)", text: $currentWeight)
+                    TextField("Current Weight (lbs)", text: $currentWeight)
                         .keyboardType(.decimalPad) // Show numeric keypad
                 }
                 
@@ -95,7 +95,7 @@ struct AddHealthMetricsView: View {
                     TextField("Water Percentage (%)", text: $waterPercentage)
                         .keyboardType(.decimalPad)
                     
-                    TextField("Goal Weight (kg)", text: $goalWeight)
+                    TextField("Goal Weight (lbs)", text: $goalWeight)
                         .keyboardType(.decimalPad)
                 }
                 
@@ -165,7 +165,7 @@ struct AddHealthMetricsView: View {
     /// - Is not empty
     /// - Can be converted to Double
     /// - Is greater than 0 (prevents negative values)
-    /// - Is less than or equal to 500 kg (reasonable upper limit)
+    /// - Is less than or equal to 1100 lbs (reasonable upper limit, ~500 kg)
     ///
     /// - Returns: true if form is valid, false otherwise
     private var isFormValid: Bool {
@@ -173,11 +173,16 @@ struct AddHealthMetricsView: View {
         guard !currentWeight.isEmpty else {
             return false
         }
-        // Validate weight is a valid number in acceptable range
-        guard let weight = Double(currentWeight), weight > 0, weight <= 500 else {
+        // Validate weight is a valid number in acceptable range (lbs)
+        guard let weight = Double(currentWeight), weight > 0, weight <= 1100 else {
             return false
         }
         return true
+    }
+    
+    /// Convert pounds to kilograms
+    private func lbsToKg(_ lbs: Double) -> Double {
+        return lbs / 2.20462
     }
     
     // MARK: - Actions
@@ -195,19 +200,23 @@ struct AddHealthMetricsView: View {
             showingError = true
             return
         }
-        guard let weight = Double(currentWeight), weight > 0, weight <= 500 else {
-            errorMessage = "Please enter a valid current weight (greater than 0 and up to 500 kg)"
+        guard let weightLbs = Double(currentWeight), weightLbs > 0, weightLbs <= 1100 else {
+            errorMessage = "Please enter a valid current weight (greater than 0 and up to 1100 lbs)"
             showingError = true
             return
         }
+        
+        // Convert pounds to kilograms for backend (backend expects kg)
+        let weightKg = lbsToKg(weightLbs)
+        let goalWeightKg = goalWeight.isEmpty ? nil : Double(goalWeight).map { lbsToKg($0) }
         
         // Create DTO with all entered values
         // Optional fields convert to Double if string is not empty, otherwise nil
         // Double("") returns nil, which is what we want for optional fields
         let dto = CreateHealthMetricsDto(
-            currentWeight: weight,
+            currentWeight: weightKg,
             bodyFatPercentage: bodyFatPercentage.isEmpty ? nil : Double(bodyFatPercentage),
-            goalWeight: goalWeight.isEmpty ? nil : Double(goalWeight),
+            goalWeight: goalWeightKg,
             waterPercentage: waterPercentage.isEmpty ? nil : Double(waterPercentage),
             waistCircumference: waistCircumference.isEmpty ? nil : Double(waistCircumference),
             hipCircumference: hipCircumference.isEmpty ? nil : Double(hipCircumference),
