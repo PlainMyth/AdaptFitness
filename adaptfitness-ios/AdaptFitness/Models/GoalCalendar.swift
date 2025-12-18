@@ -8,53 +8,101 @@
 import Foundation
 
 struct GoalCalendar: Codable, Identifiable {
-    let id: String
-    let userId: String
+    let id: UUID
+    let userId: UUID
     let weekStartDate: String
     let weekEndDate: String
-    let goalType: GoalType
-    let targetValue: Double
-    let currentValue: Double
-    let completionPercentage: Double
+    let goalType: String
+
+    let targetValue: String
+    let currentValue: String
+    let completionPercentage: String
+
     let isCompleted: Bool
     let isActive: Bool
     let description: String?
-    let workoutType: WorkoutType?
+    let workoutType: String?
     let progressHistory: [ProgressEntry]?
     let createdAt: String
     let updatedAt: String
-    
+}
+
+extension GoalCalendar {
+    var goalTypeEnum: GoalType? {
+        GoalType(rawValue: goalType)
+    }
+}
+
+extension GoalCalendar {
+    var targetValueDouble: Double {
+        Double(targetValue) ?? 0
+    }
+
+    var currentValueDouble: Double {
+        Double(currentValue) ?? 0
+    }
+
+    var completionPercentageDouble: Double {
+        Double(completionPercentage) ?? 0
+    }
+}
+
+extension GoalCalendar {
+    var completionFraction: Double {
+        (Double(completionPercentage) ?? 0.0) / 100.0
+    }
+}
+
+
+extension GoalCalendar {
     var weekIdentifier: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
-        if let startDate = formatter.date(from: weekStartDate) {
-            let calendar = Calendar.current
-            let year = calendar.component(.year, from: startDate)
-            let weekOfYear = calendar.component(.weekOfYear, from: startDate)
-            return "\(year)-W\(String(format: "%02d", weekOfYear))"
+
+        guard let startDate = formatter.date(from: weekStartDate) else {
+            return "Unknown"
         }
-        return "Unknown"
+
+        let calendar = Calendar.current
+        let year = calendar.component(.yearForWeekOfYear, from: startDate)
+        let week = calendar.component(.weekOfYear, from: startDate)
+
+        return "\(year)-W\(String(format: "%02d", week))"
     }
-    
+}
+
+extension GoalCalendar {
     var status: String {
+        let percent = completionPercentageDouble
+
         if isCompleted { return "completed" }
-        if completionPercentage >= 100 { return "achieved" }
-        if completionPercentage >= 75 { return "on_track" }
-        if completionPercentage >= 50 { return "moderate_progress" }
-        if completionPercentage > 0 { return "started" }
+        if percent >= 100 { return "achieved" }
+        if percent >= 75 { return "on_track" }
+        if percent >= 50 { return "moderate_progress" }
+        if percent > 0 { return "started" }
         return "not_started"
     }
-    
+}
+
+extension GoalCalendar {
     var unit: String {
         switch goalType {
-        case .workoutsCount: return "workouts"
-        case .totalDuration: return "minutes"
-        case .totalCalories: return "calories"
-        case .totalSets: return "sets"
-        case .totalReps: return "reps"
-        case .totalWeight: return "kg"
-        case .streakDays: return "days"
+        case GoalType.workoutsCount.rawValue: return "workouts"
+        case GoalType.totalDuration.rawValue: return "minutes"
+        case GoalType.totalCalories.rawValue: return "calories"
+        case GoalType.totalSets.rawValue: return "sets"
+        case GoalType.totalReps.rawValue: return "reps"
+        case GoalType.totalWeight.rawValue: return "kg"
+        case GoalType.streakDays.rawValue: return "days"
+        default: return ""
         }
+    }
+}
+
+extension GoalCalendar {
+    var workoutTypeEnum: WorkoutType? {
+        guard let workoutType else { return nil }
+        return WorkoutType(rawValue: workoutType)
     }
 }
 

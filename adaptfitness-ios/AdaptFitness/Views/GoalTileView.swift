@@ -8,56 +8,63 @@
 import SwiftUI
 
 struct GoalTileView: View {
-    let goal: Goal
-    // TODO: Implement different colored rings
+    let goal: GoalCalendar
     let color: Color
 
+    // Safely clamp progress between 0 and 1
+    private var progressRatio: Double {
+        min(max(goal.completionFraction, 0), 1)
+    }
+
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 12) {
+
+            // Progress Ring
             ZStack {
                 Circle()
                     .stroke(Color.gray.opacity(0.2), lineWidth: 10)
 
                 Circle()
-                    .trim(from: 0, to: goal.progress / goal.goalAmount)
+                    .trim(from: 0, to: progressRatio)
                     .stroke(
                         color,
                         style: StrokeStyle(lineWidth: 10, lineCap: .round)
                     )
                     .rotationEffect(.degrees(-90))
-                    .animation(.easeOut(duration: 0.8), value: goal.progress)
+                    .animation(.easeOut(duration: 0.8), value: progressRatio)
 
-                VStack {
-                    Image(systemName: goal.icon)
+                VStack(spacing: 4) {
+                    Image(systemName: goal.goalTypeEnum?.icon ?? "questionmark.circle")
                         .foregroundColor(color)
-                        .font(.system(size: 20))
-                    Text("\(Int(goal.progress / goal.goalAmount * 100))%")
+                        .font(.system(size: 18))
+
+                    Text("\(Int(goal.completionPercentage))%")
                         .font(.headline)
-                        .foregroundColor(.primary)
                 }
             }
             .frame(width: 80, height: 80)
-            
-            VStack(alignment: .leading, spacing: 10) {
-                Text(goal.type.capitalized)
+
+            // Goal Info
+            VStack(alignment: .leading, spacing: 6) {
+                Text(goal.goalTypeEnum?.displayName ?? "questionmark.circle")
                     .font(.headline)
-                    .foregroundColor(.primary)
-                
-                Text("\(Int(goal.progress))/")
+
+                Text("Target: \(Int(goal.targetValue)) \(goal.goalTypeEnum?.unit ?? "questionmark.circle")")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
-                
-                Text("\(Int(goal.goalAmount)) \(goal.goalUnits)")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                
-                Text("Window: \(goal.window.capitalized)")
+
+                if let workoutType = goal.workoutType {
+                    Text("Workout: \(goal.goalTypeEnum?.displayName ?? "questionmark.circle")")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
+                Text(goal.isActive ? "Active" : "Inactive")
                     .font(.caption)
-                    .foregroundColor(.gray)
+                    .foregroundColor(goal.isActive ? .green : .gray)
             }
         }
         .padding(.vertical, 10)
-        .frame(width: 250, height: 120)
+        .frame(width: 260, height: 120)
     }
 }
-

@@ -32,6 +32,7 @@ struct HomePageView: View {
     @State private var showBarcodeScanner = false
     @State private var scannedBarcode: String?
     @State private var showingSettings = false
+    @StateObject private var goalCalendar = GoalCalendarViewModel()
     
 //    hardcoded data used to mimic returned request ============
     
@@ -126,33 +127,27 @@ struct HomePageView: View {
             }
             
 //          GOAL BAR =================================
+            
             Text("Goals")
                 .font(.title)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal)
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 40) {
-                        ForEach(goals) { goal in
+
+            if goalCalendar.isLoading {
+                ProgressView("Loading goals...")
+                    .padding(.horizontal)
+            } else if let error = goalCalendar.error {
+                Text(error)
+                    .foregroundColor(.red)
+                    .padding(.horizontal)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 40) {
+                        ForEach(goalCalendar.currentWeekGoals) { goal in
                             GoalTileView(goal: goal, color: .blue)
                         }
                     }
-                }
-                .padding(.horizontal)
-                .contentMargins(.horizontal, 20)
-            
-//           spacing color
-            .background(Color(.systemGroupedBackground).ignoresSafeArea())
-            
-//            intended color
-//            .background(Color(.systemBackground).ignoresSafeArea())
-            .onAppear {
-                // Example: Simulate progress updates after data fetch
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                    withAnimation {
-                        // TODO: Animations not working
-//                        goals[0].progress = goals[0].progress / goals[0].goalAmount                                                                           
-//                        goals[1].progress = goals[1].progress / goals[1].goalAmount                                                                           
-                    }
+                    .padding(.horizontal)
                 }
             }
             
@@ -218,6 +213,10 @@ struct HomePageView: View {
                         }
                     }
                 }
+            }
+            .background(Color(.systemGroupedBackground).ignoresSafeArea())
+            .task {
+                goalCalendar.loadGoals()
             }
         }
     }
