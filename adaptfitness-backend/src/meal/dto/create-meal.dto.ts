@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNumber, IsDateString, IsPositive, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsDateString, IsPositive, MaxLength, Min, IsEnum } from 'class-validator';
 
 /**
  * Create Meal DTO
@@ -27,8 +27,53 @@ export class CreateMealDto {
 
   @IsNumber()
   @IsOptional()
-  @IsPositive()
+  @Min(0)
   totalCalories?: number;
+
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  totalProtein?: number;
+
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  totalCarbs?: number;
+
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  totalFat?: number;
+
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  totalFiber?: number;
+
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  totalSugar?: number;
+
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  totalSodium?: number;
+
+  @IsString()
+  @IsOptional()
+  @IsEnum(['breakfast', 'lunch', 'dinner', 'snack', 'other'])
+  mealType?: string;
+
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  servingSize?: number;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(50)
+  servingUnit?: string;
 
   @IsString()
   @IsOptional()

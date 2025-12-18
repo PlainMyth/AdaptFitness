@@ -49,7 +49,7 @@ class FoodSearchViewModel: ObservableObject {
             let response = try await apiService.searchFoods(
                 query: searchQuery,
                 page: 1,
-                pageSize: 20,
+                pageSize: 15, // Reduced from 20 to 15 for faster responses
                 token: token
             )
             
@@ -62,22 +62,46 @@ class FoodSearchViewModel: ObservableObject {
             }
         } catch let error as APIError {
             switch error {
+            case .httpError(401, _):
+                // Token expired or invalid - clear auth state
+                authManager.handleTokenExpiration()
+                errorMessage = "Your session has expired. Please log in again."
             case .httpError(429, _):
                 errorMessage = "Too many requests. Please wait a moment before searching again."
+            case .httpError(504, _):
+                errorMessage = "Search timed out. The food database may be slow. Please try again."
             case .httpError(let code, let message):
                 // Use custom message if available, otherwise provide default
                 errorMessage = message ?? "Server error (code: \(code)). Please try again later."
             case .decodingError:
                 errorMessage = "Could not process search results. Please try again or use manual entry."
+            case .unauthorized:
+                // No token available
+                authManager.handleTokenExpiration()
+                errorMessage = "Not authenticated. Please log in."
             default:
                 errorMessage = "Failed to search foods: \(error.localizedDescription)"
             }
             searchResults = []
         } catch {
-            // Check if it's a decoding or 429 error from the error description
+            // Check if the task was cancelled (this is expected behavior during debouncing)
+            if error is CancellationError {
+                // Task was cancelled - don't show error, this is normal during typing
+                print("🔍 Search task was cancelled (expected during debouncing)")
+                return
+            }
+            
+            // Check if it's a 401 error from the error description
             let errorString = error.localizedDescription
-            if errorString.contains("429") || errorString.contains("Too Many Requests") {
+            if errorString.contains("401") || errorString.contains("Unauthorized") || errorString.contains("Not authenticated") {
+                authManager.handleTokenExpiration()
+                errorMessage = "Your session has expired. Please log in again."
+            } else if errorString.contains("429") || errorString.contains("Too Many Requests") {
                 errorMessage = "Too many requests. Please wait a moment before searching again."
+            } else if errorString.contains("cancelled") || errorString.contains("canceled") {
+                // Task was cancelled - don't show error
+                print("🔍 Search was cancelled (expected)")
+                return
             } else if errorString.contains("decode") || errorString.contains("Failed to decode") {
                 errorMessage = "Could not process search results. Please try again or use manual entry."
             } else {

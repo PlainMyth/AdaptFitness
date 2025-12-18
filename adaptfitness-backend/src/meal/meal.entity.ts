@@ -24,25 +24,25 @@ export class Meal {
   @Column({ type: 'timestamp' })
   mealTime: Date;
 
-  @Column({ default: 0 })
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   totalCalories: number;
 
-  @Column({ default: 0 })
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   totalProtein: number; // in grams
 
-  @Column({ default: 0 })
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   totalCarbs: number; // in grams
 
-  @Column({ default: 0 })
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   totalFat: number; // in grams
 
-  @Column({ default: 0 })
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   totalFiber: number; // in grams
 
-  @Column({ default: 0 })
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   totalSugar: number; // in grams
 
-  @Column({ default: 0 })
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   totalSodium: number; // in mg
 
   @Column({ 
@@ -52,7 +52,7 @@ export class Meal {
   })
   mealType: string;
 
-  @Column({ default: 0 })
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   servingSize: number; // in grams or pieces
 
   @Column({ nullable: true })
