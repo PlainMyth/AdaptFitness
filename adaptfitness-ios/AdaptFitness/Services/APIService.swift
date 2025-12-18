@@ -174,6 +174,49 @@ class APIService: ObservableObject {
         )
     }
     
+    func deleteMeal(id: String, token: String) async throws -> Void {
+        guard let url = URL(string: baseURL + "/meals/\(id)") else {
+            throw APIError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        do {
+            let (data, response) = try await session.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw APIError.invalidResponse
+            }
+            
+            guard httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 else {
+                let errorMessage = extractErrorMessage(from: data, statusCode: httpResponse.statusCode)
+                throw APIError.httpError(httpResponse.statusCode, message: errorMessage)
+            }
+        } catch let urlError as URLError {
+            switch urlError.code {
+            case .notConnectedToInternet:
+                throw APIError.httpError(0, message: "No internet connection. Please check your network.")
+            case .timedOut:
+                throw APIError.httpError(0, message: "Connection timed out. The server may be slow or unavailable.")
+            case .cannotConnectToHost, .cannotFindHost:
+                #if targetEnvironment(simulator)
+                throw APIError.httpError(0, message: "Could not connect to server. Make sure the backend is running on localhost:3000")
+                #else
+                throw APIError.httpError(0, message: "Could not connect to server. Please check your internet connection.")
+                #endif
+            default:
+                throw APIError.httpError(0, message: "Network error: \(urlError.localizedDescription)")
+            }
+        } catch {
+            if error is APIError {
+                throw error
+            }
+            throw APIError.httpError(0, message: "Unexpected error: \(error.localizedDescription)")
+        }
+    }
+    
     // MARK: - Food Search (OpenFoodFacts)
     
     func searchFoods(query: String, page: Int = 1, pageSize: Int = 20, token: String) async throws -> FoodSearchResponse {
@@ -186,35 +229,37 @@ class APIService: ObservableObject {
         request.httpMethod = "GET"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        
-        let (data, response) = try await session.data(for: request)
-        
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw APIError.invalidResponse
-        }
-        
-        guard httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 else {
-            let errorMessage = extractErrorMessage(from: data, statusCode: httpResponse.statusCode)
-            throw APIError.httpError(httpResponse.statusCode, message: errorMessage)
-        }
+        request.timeoutInterval = 20.0 // 20 second timeout (OpenFoodFacts API can be slow)
         
         do {
-            // Log raw response for debugging (first 500 chars)
-            if let jsonString = String(data: data, encoding: .utf8) {
-                print("Food search response: \(jsonString.prefix(500))")
+            let (data, response) = try await session.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw APIError.invalidResponse
             }
             
-            let decoder = JSONDecoder()
-            // Backend returns camelCase, so no conversion needed
-            let response = try decoder.decode(FoodSearchResponse.self, from: data)
+            guard httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 else {
+                let errorMessage = extractErrorMessage(from: data, statusCode: httpResponse.statusCode)
+                throw APIError.httpError(httpResponse.statusCode, message: errorMessage)
+            }
             
-            // Validate response structure
-            print("Decoded successfully. Found \(response.foods.count) foods, totalCount: \(response.totalCount)")
-            
-            return response
-        } catch let decodingError as DecodingError {
-            // Log more details about the decoding error for debugging
-            let errorMessage: String
+            do {
+                // Log raw response for debugging (first 500 chars)
+                if let jsonString = String(data: data, encoding: .utf8) {
+                    print("Food search response: \(jsonString.prefix(500))")
+                }
+                
+                let decoder = JSONDecoder()
+                // Backend returns camelCase, so no conversion needed
+                let response = try decoder.decode(FoodSearchResponse.self, from: data)
+                
+                // Validate response structure
+                print("Decoded successfully. Found \(response.foods.count) foods, totalCount: \(response.totalCount)")
+                
+                return response
+            } catch let decodingError as DecodingError {
+                // Log more details about the decoding error for debugging
+                let errorMessage: String
             switch decodingError {
             case .typeMismatch(let type, let context):
                 errorMessage = "Type mismatch: expected \(type) at \(context.codingPath.map { $0.stringValue }.joined(separator: "."))"
@@ -236,9 +281,37 @@ class APIService: ObservableObject {
             print("Decoding error details: \(errorMessage)")
             
             throw APIError.decodingError
+            }
+        } catch let urlError as URLError {
+            // Check if the request was cancelled (expected during debouncing)
+            if urlError.code == .cancelled {
+                throw CancellationError()
+            }
+            
+            // Handle network connection errors
+            switch urlError.code {
+            case .notConnectedToInternet:
+                throw APIError.httpError(0, message: "No internet connection. Please check your network.")
+            case .timedOut:
+                throw APIError.httpError(0, message: "Connection timed out. The server may be slow or unavailable.")
+            case .cannotConnectToHost, .cannotFindHost:
+                #if targetEnvironment(simulator)
+                throw APIError.httpError(0, message: "Could not connect to server. Make sure the backend is running on localhost:3000")
+                #else
+                throw APIError.httpError(0, message: "Could not connect to server. Please check your internet connection.")
+                #endif
+            default:
+                throw APIError.httpError(0, message: "Network error: \(urlError.localizedDescription)")
+            }
         } catch {
-            print("Unexpected error decoding food search: \(error)")
-            throw APIError.decodingError
+            // Re-throw CancellationError and APIError as-is
+            if error is CancellationError {
+                throw error
+            }
+            if error is APIError {
+                throw error
+            }
+            throw APIError.httpError(0, message: "Unexpected error: \(error.localizedDescription)")
         }
     }
     
@@ -397,27 +470,52 @@ class APIService: ObservableObject {
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 10.0 // 10 second timeout
         
         if let body = body {
             request.httpBody = try JSONEncoder().encode(body)
         }
         
-        let (data, response) = try await session.data(for: request)
-        
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw APIError.invalidResponse
-        }
-        
-        guard httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 else {
-            let errorMessage = extractErrorMessage(from: data, statusCode: httpResponse.statusCode)
-            throw APIError.httpError(httpResponse.statusCode, message: errorMessage)
-        }
-        
         do {
-            let decoder = JSONDecoder()
-            return try decoder.decode(responseType, from: data)
+            let (data, response) = try await session.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw APIError.invalidResponse
+            }
+            
+            guard httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 else {
+                let errorMessage = extractErrorMessage(from: data, statusCode: httpResponse.statusCode)
+                throw APIError.httpError(httpResponse.statusCode, message: errorMessage)
+            }
+            
+            do {
+                let decoder = JSONDecoder()
+                return try decoder.decode(responseType, from: data)
+            } catch {
+                throw APIError.decodingError
+            }
+        } catch let urlError as URLError {
+            // Handle network connection errors
+            switch urlError.code {
+            case .notConnectedToInternet:
+                throw APIError.httpError(0, message: "No internet connection. Please check your network.")
+            case .timedOut:
+                throw APIError.httpError(0, message: "Connection timed out. The server may be slow or unavailable.")
+            case .cannotConnectToHost, .cannotFindHost:
+                #if targetEnvironment(simulator)
+                throw APIError.httpError(0, message: "Could not connect to server. Make sure the backend is running on localhost:3000")
+                #else
+                throw APIError.httpError(0, message: "Could not connect to server. Please check your internet connection.")
+                #endif
+            default:
+                throw APIError.httpError(0, message: "Network error: \(urlError.localizedDescription)")
+            }
         } catch {
-            throw APIError.decodingError
+            // Re-throw APIError as-is, wrap others
+            if error is APIError {
+                throw error
+            }
+            throw APIError.httpError(0, message: "Unexpected error: \(error.localizedDescription)")
         }
     }
     
@@ -436,53 +534,76 @@ class APIService: ObservableObject {
         request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.timeoutInterval = 10.0 // 10 second timeout
         
         if let body = body {
             request.httpBody = try JSONEncoder().encode(body)
         }
         
-        let (data, response) = try await session.data(for: request)
-        
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw APIError.invalidResponse
-        }
-        
-        guard httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 else {
-            let errorMessage = extractErrorMessage(from: data, statusCode: httpResponse.statusCode)
-            throw APIError.httpError(httpResponse.statusCode, message: errorMessage)
-        }
-        
         do {
-            let decoder = JSONDecoder()
-            // Backend returns camelCase for most responses
-            // Use convertFromSnakeCase only if backend uses snake_case
-            decoder.keyDecodingStrategy = .useDefaultKeys
-            return try decoder.decode(responseType, from: data)
-        } catch let decodingError as DecodingError {
-            // Log more details about the decoding error for debugging
-            let errorMessage: String
-            switch decodingError {
-            case .typeMismatch(let type, let context):
-                errorMessage = "Type mismatch: expected \(type) at \(context.codingPath.map { $0.stringValue }.joined(separator: "."))"
-            case .valueNotFound(let type, let context):
-                errorMessage = "Value not found: expected \(type) at \(context.codingPath.map { $0.stringValue }.joined(separator: "."))"
-            case .keyNotFound(let key, let context):
-                errorMessage = "Key not found: \(key.stringValue) at \(context.codingPath.map { $0.stringValue }.joined(separator: "."))"
-            case .dataCorrupted(let context):
-                errorMessage = "Data corrupted: \(context.debugDescription)"
-            @unknown default:
-                errorMessage = "Decoding error: \(decodingError.localizedDescription)"
+            let (data, response) = try await session.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw APIError.invalidResponse
             }
             
-            // Log the raw response for debugging
-            if let jsonString = String(data: data, encoding: .utf8) {
-                print("Failed to decode response. Raw JSON: \(jsonString.prefix(1000))")
+            guard httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 else {
+                let errorMessage = extractErrorMessage(from: data, statusCode: httpResponse.statusCode)
+                throw APIError.httpError(httpResponse.statusCode, message: errorMessage)
             }
-            print("Decoding error details: \(errorMessage)")
             
-            throw APIError.decodingError
+            do {
+                let decoder = JSONDecoder()
+                // Backend returns camelCase for most responses
+                // Use convertFromSnakeCase only if backend uses snake_case
+                decoder.keyDecodingStrategy = .useDefaultKeys
+                return try decoder.decode(responseType, from: data)
+            } catch let decodingError as DecodingError {
+                // Log more details about the decoding error for debugging
+                let errorMessage: String
+                switch decodingError {
+                case .typeMismatch(let type, let context):
+                    errorMessage = "Type mismatch: expected \(type) at \(context.codingPath.map { $0.stringValue }.joined(separator: "."))"
+                case .valueNotFound(let type, let context):
+                    errorMessage = "Value not found: expected \(type) at \(context.codingPath.map { $0.stringValue }.joined(separator: "."))"
+                case .keyNotFound(let key, let context):
+                    errorMessage = "Key not found: \(key.stringValue) at \(context.codingPath.map { $0.stringValue }.joined(separator: "."))"
+                case .dataCorrupted(let context):
+                    errorMessage = "Data corrupted: \(context.debugDescription)"
+                @unknown default:
+                    errorMessage = "Decoding error: \(decodingError.localizedDescription)"
+                }
+                
+                // Log the raw response for debugging
+                if let jsonString = String(data: data, encoding: .utf8) {
+                    print("Failed to decode response. Raw JSON: \(jsonString.prefix(1000))")
+                }
+                print("Decoding error details: \(errorMessage)")
+                
+                throw APIError.decodingError
+            }
+        } catch let urlError as URLError {
+            // Handle network connection errors
+            switch urlError.code {
+            case .notConnectedToInternet:
+                throw APIError.httpError(0, message: "No internet connection. Please check your network.")
+            case .timedOut:
+                throw APIError.httpError(0, message: "Connection timed out. The server may be slow or unavailable.")
+            case .cannotConnectToHost, .cannotFindHost:
+                #if targetEnvironment(simulator)
+                throw APIError.httpError(0, message: "Could not connect to server. Make sure the backend is running on localhost:3000")
+                #else
+                throw APIError.httpError(0, message: "Could not connect to server. Please check your internet connection.")
+                #endif
+            default:
+                throw APIError.httpError(0, message: "Network error: \(urlError.localizedDescription)")
+            }
         } catch {
-            throw APIError.decodingError
+            // Re-throw APIError as-is, wrap others
+            if error is APIError {
+                throw error
+            }
+            throw APIError.httpError(0, message: "Unexpected error: \(error.localizedDescription)")
         }
     }
     
@@ -499,49 +620,72 @@ class APIService: ObservableObject {
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        
-        let (data, response) = try await session.data(for: request)
-        
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw APIError.invalidResponse
-        }
-        
-        guard httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 else {
-            let errorMessage = extractErrorMessage(from: data, statusCode: httpResponse.statusCode)
-            throw APIError.httpError(httpResponse.statusCode, message: errorMessage)
-        }
+        request.timeoutInterval = 10.0 // 10 second timeout
         
         do {
-            let decoder = JSONDecoder()
-            // Backend returns camelCase for most responses
-            // Use convertFromSnakeCase only if backend uses snake_case
-            decoder.keyDecodingStrategy = .useDefaultKeys
-            return try decoder.decode(responseType, from: data)
-        } catch let decodingError as DecodingError {
-            // Log more details about the decoding error for debugging
-            let errorMessage: String
-            switch decodingError {
-            case .typeMismatch(let type, let context):
-                errorMessage = "Type mismatch: expected \(type) at \(context.codingPath.map { $0.stringValue }.joined(separator: "."))"
-            case .valueNotFound(let type, let context):
-                errorMessage = "Value not found: expected \(type) at \(context.codingPath.map { $0.stringValue }.joined(separator: "."))"
-            case .keyNotFound(let key, let context):
-                errorMessage = "Key not found: \(key.stringValue) at \(context.codingPath.map { $0.stringValue }.joined(separator: "."))"
-            case .dataCorrupted(let context):
-                errorMessage = "Data corrupted: \(context.debugDescription)"
-            @unknown default:
-                errorMessage = "Decoding error: \(decodingError.localizedDescription)"
+            let (data, response) = try await session.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw APIError.invalidResponse
             }
             
-            // Log the raw response for debugging
-            if let jsonString = String(data: data, encoding: .utf8) {
-                print("Failed to decode response. Raw JSON: \(jsonString.prefix(1000))")
+            guard httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 else {
+                let errorMessage = extractErrorMessage(from: data, statusCode: httpResponse.statusCode)
+                throw APIError.httpError(httpResponse.statusCode, message: errorMessage)
             }
-            print("Decoding error details: \(errorMessage)")
             
-            throw APIError.decodingError
+            do {
+                let decoder = JSONDecoder()
+                // Backend returns camelCase for most responses
+                // Use convertFromSnakeCase only if backend uses snake_case
+                decoder.keyDecodingStrategy = .useDefaultKeys
+                return try decoder.decode(responseType, from: data)
+            } catch let decodingError as DecodingError {
+                // Log more details about the decoding error for debugging
+                let errorMessage: String
+                switch decodingError {
+                case .typeMismatch(let type, let context):
+                    errorMessage = "Type mismatch: expected \(type) at \(context.codingPath.map { $0.stringValue }.joined(separator: "."))"
+                case .valueNotFound(let type, let context):
+                    errorMessage = "Value not found: expected \(type) at \(context.codingPath.map { $0.stringValue }.joined(separator: "."))"
+                case .keyNotFound(let key, let context):
+                    errorMessage = "Key not found: \(key.stringValue) at \(context.codingPath.map { $0.stringValue }.joined(separator: "."))"
+                case .dataCorrupted(let context):
+                    errorMessage = "Data corrupted: \(context.debugDescription)"
+                @unknown default:
+                    errorMessage = "Decoding error: \(decodingError.localizedDescription)"
+                }
+                
+                // Log the raw response for debugging
+                if let jsonString = String(data: data, encoding: .utf8) {
+                    print("Failed to decode response. Raw JSON: \(jsonString.prefix(1000))")
+                }
+                print("Decoding error details: \(errorMessage)")
+                
+                throw APIError.decodingError
+            }
+        } catch let urlError as URLError {
+            // Handle network connection errors
+            switch urlError.code {
+            case .notConnectedToInternet:
+                throw APIError.httpError(0, message: "No internet connection. Please check your network.")
+            case .timedOut:
+                throw APIError.httpError(0, message: "Connection timed out. The server may be slow or unavailable.")
+            case .cannotConnectToHost, .cannotFindHost:
+                #if targetEnvironment(simulator)
+                throw APIError.httpError(0, message: "Could not connect to server. Make sure the backend is running on localhost:3000")
+                #else
+                throw APIError.httpError(0, message: "Could not connect to server. Please check your internet connection.")
+                #endif
+            default:
+                throw APIError.httpError(0, message: "Network error: \(urlError.localizedDescription)")
+            }
         } catch {
-            throw APIError.decodingError
+            // Re-throw APIError as-is, wrap others
+            if error is APIError {
+                throw error
+            }
+            throw APIError.httpError(0, message: "Unexpected error: \(error.localizedDescription)")
         }
     }
 }
