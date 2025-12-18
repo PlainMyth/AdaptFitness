@@ -77,7 +77,7 @@ describe('AuthService', () => {
 
       const result = await service.register(validRegisterDto);
 
-      expect(result.message).toBe('User created successfully');
+      expect(result.access_token).toBeDefined();
       expect(result.user.email).toBe(validRegisterDto.email);
       expect(result.user.firstName).toBe(validRegisterDto.firstName);
       expect(mockUserService.create).toHaveBeenCalled();
