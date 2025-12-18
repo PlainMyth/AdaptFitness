@@ -41,7 +41,7 @@ struct SignUpView: View {
                             .font(.title)
                             .fontWeight(.bold)
                         
-                        Text("Join AdaptFitness and start your fitness journey")
+                        Text("Join UltimateFitness and start your fitness journey")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                             .multilineTextAlignment(.center)

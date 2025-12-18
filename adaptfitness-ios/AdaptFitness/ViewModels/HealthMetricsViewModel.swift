@@ -83,6 +83,30 @@ class HealthMetricsViewModel: ObservableObject {
             // Update published property with response (triggers UI update)
             latestMetrics = response
             isLoading = false
+        } catch let error as APIError {
+            // Handle 404 (no health metrics found) gracefully - this is normal for new users
+            if case .httpError(404, _) = error {
+                // No health metrics exist yet - this is fine, just set to nil
+                latestMetrics = nil
+                isLoading = false
+                // Don't show error for 404 - it's expected when user hasn't created metrics yet
+                return
+            }
+            // Handle other API errors
+            isLoading = false
+            errorMessage = error.localizedDescription
+            showError = true
+        } catch let error as APIError {
+            // Handle 404 (no health metrics found) gracefully
+            if case .httpError(404, _) = error {
+                calculatedMetrics = nil
+                isLoading = false
+                return
+            }
+            // Handle other API errors
+            isLoading = false
+            errorMessage = error.localizedDescription
+            showError = true
         } catch let error as NetworkError {
             // Handle specific network errors
             handleError(error)
@@ -156,6 +180,13 @@ class HealthMetricsViewModel: ObservableObject {
             // This includes all backend calculations
             latestMetrics = response
             isLoading = false
+        } catch let error as APIError {
+            // Reset loading state before throwing
+            isLoading = false
+            errorMessage = error.localizedDescription
+            showError = true
+            // Re-throw error so caller can handle it if needed
+            throw error
         } catch let error as NetworkError {
             // Reset loading state before throwing
             isLoading = false

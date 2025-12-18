@@ -29,14 +29,13 @@ struct RegisterView: View {
                         .resizable()
                         .scaledToFit()
                         .frame(width: 100, height: 100)
-                        .clipShape(Circle())
                         .padding(.top, 20)
                     
                     Text("Create Account")
                         .font(.largeTitle)
                         .fontWeight(.bold)
                     
-                    Text("Join AdaptFitness and start your fitness journey")
+                    Text("Join UltimateFitness and start your fitness journey")
                         .font(.subheadline)
                         .foregroundColor(.gray)
                         .multilineTextAlignment(.center)

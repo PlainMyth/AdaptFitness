@@ -23,6 +23,7 @@ class KeychainManager {
         case accessToken = "com.adaptfitness.accessToken"
         case refreshToken = "com.adaptfitness.refreshToken"
         case userEmail = "com.adaptfitness.userEmail"
+        case savedPassword = "com.adaptfitness.savedPassword"
     }
     
     // MARK: - Public Methods
@@ -99,6 +100,7 @@ class KeychainManager {
         try delete(forKey: .accessToken)
         try delete(forKey: .refreshToken)
         try delete(forKey: .userEmail)
+        try delete(forKey: .savedPassword)
     }
     
     /// Check if a value exists in the Keychain
@@ -175,6 +177,21 @@ extension KeychainManager {
     /// Delete user email
     func deleteUserEmail() throws {
         try delete(forKey: .userEmail)
+    }
+    
+    /// Save password securely (only when Remember Me is enabled)
+    func savePassword(_ password: String) throws {
+        try save(password, forKey: .savedPassword)
+    }
+    
+    /// Load saved password
+    func loadPassword() -> String? {
+        return load(forKey: .savedPassword)
+    }
+    
+    /// Delete saved password
+    func deletePassword() throws {
+        try delete(forKey: .savedPassword)
     }
 }
 

@@ -118,19 +118,19 @@ struct HealthMetricsView: View {
                                         .fontWeight(.semibold)
                                     
                                     VStack(spacing: 12) {
-                                        if let leanMass = metrics.leanBodyMass {
+                                        if let leanMass = metrics.leanBodyMassLbs {
                                             MeasurementRow(
                                                 label: "Lean Body Mass",
-                                                value: String(format: "%.1f kg", leanMass),
+                                                value: String(format: "%.1f lbs", leanMass),
                                                 icon: "scalemass.fill",
                                                 color: .green
                                             )
                                         }
                                         
-                                        if let muscleMass = metrics.skeletalMuscleMass {
+                                        if let muscleMass = metrics.skeletalMuscleMassLbs {
                                             MeasurementRow(
                                                 label: "Skeletal Muscle Mass",
-                                                value: String(format: "%.1f kg", muscleMass),
+                                                value: String(format: "%.1f lbs", muscleMass),
                                                 icon: "figure.strengthtraining.traditional",
                                                 color: .blue
                                             )
@@ -282,17 +282,17 @@ struct HealthMetricsView: View {
                                         .fontWeight(.semibold)
                                     
                                     VStack(spacing: 12) {
-                                        if let goalWeight = metrics.goalWeight {
+                                        if let goalWeight = metrics.goalWeightLbs {
                                             MeasurementRow(
                                                 label: "Goal Weight",
-                                                value: String(format: "%.1f kg", goalWeight),
+                                                value: String(format: "%.1f lbs", goalWeight),
                                                 icon: "target",
                                                 color: .blue
                                             )
                                             
                                             MeasurementRow(
                                                 label: "Current Weight",
-                                                value: String(format: "%.1f kg", metrics.currentWeight),
+                                                value: String(format: "%.1f lbs", metrics.currentWeightLbs),
                                                 icon: "scalemass.fill",
                                                 color: .gray
                                             )
