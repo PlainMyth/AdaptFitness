@@ -126,7 +126,7 @@ struct MealTrackerMainView: View {
                 VStack(spacing: 20) {
                     // Welcome Header
                     HStack {
-                        Text("Welcome Back!")
+                        Text("Meal Logger")
                             .font(.title)
                             .fontWeight(.bold)
                         Spacer()
@@ -142,32 +142,33 @@ struct MealTrackerMainView: View {
                             }
                         }
                         .padding(.horizontal)
+                        .padding(.top)
                     }
                     
                     // Your Goals Section
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Your Goals")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .frame(maxWidth: .infinity, alignment: .center)
-                        
-                        Button(action: {
-                            showingAddGoal = true
-                        }) {
-                            HStack {
-                                Spacer()
-                                Text("Add New")
-                                    .font(.headline)
-                                    .foregroundColor(.white)
-                                Spacer()
-                            }
-                            .padding()
-                            .background(Color.blue)
-                            .cornerRadius(12)
-                        }
-                        .padding(.horizontal)
-                    }
-                    .padding(.top)
+//                    VStack(alignment: .leading, spacing: 12) {
+//                        Text("Your Goals")
+//                            .font(.title2)
+//                            .fontWeight(.bold)
+//                            .frame(maxWidth: .infinity, alignment: .center)
+//                        
+//                        Button(action: {
+//                            showingAddGoal = true
+//                        }) {
+//                            HStack {
+//                                Spacer()
+//                                Text("Add New")
+//                                    .font(.headline)
+//                                    .foregroundColor(.white)
+//                                Spacer()
+//                            }
+//                            .padding()
+//                            .background(Color.blue)
+//                            .cornerRadius(12)
+//                        }
+//                        .padding(.horizontal)
+//                    }
+//                    .padding(.top)
                     
                     // Food Log Section
                     VStack(alignment: .leading, spacing: 16) {
