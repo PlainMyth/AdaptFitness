@@ -13,17 +13,111 @@ struct MealTrackerMainView: View {
     @State private var showingAddGoal = false
     @State private var showingManualEntry = false
     @State private var showingAddMealOptions = false
+    @State private var selectedFood: SimplifiedFoodItem?
+    @State private var showingNutritionFacts = false
     
-    // Mock goals data matching Figma design
-    @State private var goals: [MealTrackerGoal] = [
-        MealTrackerGoal(id: "1", name: "Walking", progress: 0.75, remaining: "4.2 km left", icon: "figure.walk", color: .green),
-        MealTrackerGoal(id: "2", name: "Stretching", progress: 0.25, remaining: "16 Days left", icon: "figure.flexibility", color: .purple),
-        MealTrackerGoal(id: "3", name: "Food Diversity", progress: 0.50, remaining: "12 left", icon: "leaf.fill", color: .orange),
-        MealTrackerGoal(id: "4", name: "Workout Days", progress: 0.90, remaining: "3 left", icon: "dumbbell.fill", color: .blue)
-    ]
+    // Macro goals (in grams)
+    private let dailyGoalProtein: Double = 150
+    private let dailyGoalCarbs: Double = 200
+    private let dailyGoalFat: Double = 65
+    private let dailyGoalSugar: Double = 50
+    private let dailyGoalFiber: Double = 30
+    private let dailyGoalCalories: Double = 2000
     
-    private var groupedMeals: [(day: Date, meals: [Meal])] {
-        mealViewModel.meals.groupedByDayDescending()
+    // Calculate macro goals based on today's meals
+    private var macroGoals: [MealTrackerGoal] {
+        let todayMeals = mealViewModel.todaysMeals
+        
+        let consumedProtein = todayMeals.reduce(0.0) { $0 + $1.totalProtein }
+        let consumedCarbs = todayMeals.reduce(0.0) { $0 + $1.totalCarbs }
+        let consumedFat = todayMeals.reduce(0.0) { $0 + $1.totalFat }
+        let consumedSugar = todayMeals.reduce(0.0) { $0 + ($1.totalSugar ?? 0) }
+        let consumedFiber = todayMeals.reduce(0.0) { $0 + ($1.totalFiber ?? 0) }
+        let consumedCalories = todayMeals.reduce(0.0) { $0 + $1.totalCalories }
+        
+        func calculateProgress(consumed: Double, goal: Double) -> Double {
+            guard goal > 0 else { return 0 }
+            return min(consumed / goal, 1.0)
+        }
+        
+        func formatConsumedGoal(consumed: Double, goal: Double, unit: String = "g") -> String {
+            if unit == "Cal" {
+                return String(format: "%.0f/%.0f", consumed, goal)
+            }
+            return String(format: "%.0f/%.0f %@", consumed, goal, unit)
+        }
+        
+        return [
+            MealTrackerGoal(
+                id: "calories",
+                name: "Calories",
+                progress: calculateProgress(consumed: consumedCalories, goal: dailyGoalCalories),
+                remaining: formatConsumedGoal(consumed: consumedCalories, goal: dailyGoalCalories, unit: "Cal"),
+                icon: "flame.fill",
+                color: .red
+            ),
+            MealTrackerGoal(
+                id: "protein",
+                name: "Protein",
+                progress: calculateProgress(consumed: consumedProtein, goal: dailyGoalProtein),
+                remaining: formatConsumedGoal(consumed: consumedProtein, goal: dailyGoalProtein),
+                icon: "dumbbell.fill",
+                color: .orange
+            ),
+            MealTrackerGoal(
+                id: "carbs",
+                name: "Carbs",
+                progress: calculateProgress(consumed: consumedCarbs, goal: dailyGoalCarbs),
+                remaining: formatConsumedGoal(consumed: consumedCarbs, goal: dailyGoalCarbs),
+                icon: "leaf.fill",
+                color: .green
+            ),
+            MealTrackerGoal(
+                id: "fat",
+                name: "Fat",
+                progress: calculateProgress(consumed: consumedFat, goal: dailyGoalFat),
+                remaining: formatConsumedGoal(consumed: consumedFat, goal: dailyGoalFat),
+                icon: "drop.fill",
+                color: .blue
+            ),
+            MealTrackerGoal(
+                id: "sugar",
+                name: "Sugar",
+                progress: calculateProgress(consumed: consumedSugar, goal: dailyGoalSugar),
+                remaining: formatConsumedGoal(consumed: consumedSugar, goal: dailyGoalSugar),
+                icon: "sparkles",
+                color: .purple
+            ),
+            MealTrackerGoal(
+                id: "fiber",
+                name: "Fiber",
+                progress: calculateProgress(consumed: consumedFiber, goal: dailyGoalFiber),
+                remaining: formatConsumedGoal(consumed: consumedFiber, goal: dailyGoalFiber),
+                icon: "circle.grid.2x2.fill",
+                color: .indigo
+            )
+        ]
+    }
+    
+    // Group today's meals by meal type
+    private var mealsByType: [(type: MealType, meals: [Meal])] {
+        let todayMeals = mealViewModel.todaysMeals
+        let grouped = Dictionary(grouping: todayMeals) { meal -> MealType in
+            if let mealTypeString = meal.mealType,
+               let mealType = MealType(rawValue: mealTypeString) {
+                return mealType
+            }
+            return .other
+        }
+        
+        // Order by meal type: breakfast, lunch, dinner, snack, other
+        let order: [MealType] = [.breakfast, .lunch, .dinner, .snack, .other]
+        return order.compactMap { type in
+            if let meals = grouped[type], !meals.isEmpty {
+                return (type: type, meals: meals)
+            }
+            return nil
+        }
     }
     
     var body: some View {
@@ -40,10 +134,10 @@ struct MealTrackerMainView: View {
                     .padding(.horizontal)
                     .padding(.top)
                     
-                    // Goal Progress Circles
+                    // Macro Goals Progress Circles
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 20) {
-                            ForEach(goals) { goal in
+                            ForEach(macroGoals) { goal in
                                 GoalProgressCircle(goal: goal)
                             }
                         }
@@ -81,7 +175,7 @@ struct MealTrackerMainView: View {
                             .font(.headline)
                             .padding(.horizontal)
                         
-                        if groupedMeals.isEmpty {
+                        if mealsByType.isEmpty {
                             VStack(spacing: 12) {
                                 Image(systemName: "fork.knife")
                                     .font(.system(size: 50))
@@ -97,16 +191,22 @@ struct MealTrackerMainView: View {
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 40)
                         } else {
-                            ForEach(groupedMeals, id: \.day) { day, dayMeals in
+                            ForEach(mealsByType, id: \.type) { mealType, meals in
                                 VStack(alignment: .leading, spacing: 8) {
-                                    Text(formatDay(day))
-                                        .font(.headline)
-                                        .padding(.horizontal)
+                                    HStack {
+                                        Image(systemName: mealType.icon)
+                                            .foregroundColor(.orange)
+                                        Text(mealType.displayName)
+                                            .font(.headline)
+                                    }
+                                    .padding(.horizontal)
                                     
                                     ScrollView(.horizontal, showsIndicators: false) {
                                         HStack(spacing: 12) {
-                                            ForEach(dayMeals) { meal in
-                                                FoodLogCard(meal: meal)
+                                            ForEach(meals) { meal in
+                                                FoodLogCard(meal: meal, onDelete: {
+                                                    deleteMeal(meal)
+                                                })
                                             }
                                         }
                                         .padding(.horizontal)
@@ -131,12 +231,37 @@ struct MealTrackerMainView: View {
                 }
             }
             .sheet(isPresented: $showingFoodSelection) {
-                FoodSelectionView(selectedFood: .constant(nil))
+                FoodSelectionView(selectedFood: $selectedFood)
+            }
+            .sheet(isPresented: $showingNutritionFacts) {
+                if let food = selectedFood {
+                    NutritionFactsView(food: food, onMealAdded: { newMeal in
+                        // Add meal immediately to local array
+                        mealViewModel.addMeal(newMeal)
+                        // Then refresh from server to ensure consistency
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            mealViewModel.loadMeals()
+                        }
+                    })
+                }
+            }
+            .refreshable {
+                // Pull to refresh
+                mealViewModel.loadMeals()
+            }
+            .onChange(of: selectedFood?.id) { oldValue, newValue in
+                if selectedFood != nil {
+                    showingFoodSelection = false
+                    showingNutritionFacts = true
+                }
             }
             .sheet(isPresented: $showingManualEntry) {
                 AddMealView { newMeal in
                     mealViewModel.addMeal(newMeal)
-                    mealViewModel.loadMeals() // Refresh the meals list
+                    // Refresh the meals list after a short delay
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        mealViewModel.loadMeals()
+                    }
                 }
             }
             .sheet(isPresented: $showingMealTracking) {
@@ -145,17 +270,6 @@ struct MealTrackerMainView: View {
             .sheet(isPresented: $showingAddGoal) {
                 // TODO: Add goal form
                 Text("Add Goal Form")
-            }
-            .confirmationDialog("Add Food", isPresented: $showingAddMealOptions, titleVisibility: .visible) {
-                Button("Search Food Database") {
-                    showingFoodSelection = true
-                }
-                
-                Button("Enter Manually") {
-                    showingManualEntry = true
-                }
-                
-                Button("Cancel", role: .cancel) { }
             }
             .overlay(alignment: .bottomTrailing) {
                 // Floating Barcode Button
@@ -171,18 +285,75 @@ struct MealTrackerMainView: View {
                         .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 3)
                 }
                 .padding(.trailing, 20)
-                .padding(.bottom, 100)
+                .padding(.bottom, 20)
+                .popover(isPresented: $showingAddMealOptions, attachmentAnchor: .point(.topTrailing), arrowEdge: .bottom) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text("Add Food")
+                            .font(.headline)
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(Color(.systemGray6))
+                        
+                        Divider()
+                        
+                        Button(action: {
+                            showingAddMealOptions = false
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                showingFoodSelection = true
+                            }
+                        }) {
+                            HStack(spacing: 12) {
+                                Image(systemName: "magnifyingglass")
+                                    .foregroundColor(.blue)
+                                    .frame(width: 24)
+                                Text("Search Food Database")
+                                Spacer()
+                            }
+                            .padding()
+                        }
+                        .buttonStyle(.plain)
+                        
+                        Divider()
+                        
+                        Button(action: {
+                            showingAddMealOptions = false
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                showingManualEntry = true
+                            }
+                        }) {
+                            HStack(spacing: 12) {
+                                Image(systemName: "pencil")
+                                    .foregroundColor(.blue)
+                                    .frame(width: 24)
+                                Text("Enter Manually")
+                                Spacer()
+                            }
+                            .padding()
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .frame(width: 280)
+                    .background(Color(.systemBackground))
+                    .cornerRadius(12)
+                    .presentationCompactAdaptation(.popover)
+                }
             }
             .onAppear {
                 mealViewModel.loadMeals()
             }
+            .onChange(of: mealViewModel.meals.count) { oldValue, newValue in
+                // Refresh when meals count changes
+                print("📊 Meals count changed from \(oldValue) to \(newValue)")
+                print("📊 Today's meals: \(mealViewModel.todaysMeals.count)")
+            }
         }
     }
     
-    private func formatDay(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "M/dd" // e.g., "5/09"
-        return formatter.string(from: date)
+    private func deleteMeal(_ meal: Meal) {
+        Task {
+            await mealViewModel.deleteMeal(meal)
+            mealViewModel.loadMeals() // Refresh the list
+        }
     }
 }
 
@@ -237,6 +408,9 @@ struct GoalProgressCircle: View {
 
 struct FoodLogCard: View {
     let meal: Meal
+    let onDelete: () -> Void
+    
+    @State private var showingDeleteConfirmation = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -268,6 +442,18 @@ struct FoodLogCard: View {
             Text("\(Int(meal.totalCalories)) Cal")
                 .font(.caption2)
                 .foregroundColor(.secondary)
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            showingDeleteConfirmation = true
+        }
+        .confirmationDialog("Delete Meal", isPresented: $showingDeleteConfirmation, titleVisibility: .visible) {
+            Button("Delete", role: .destructive) {
+                onDelete()
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Are you sure you want to delete '\(meal.name)'?")
         }
     }
 }

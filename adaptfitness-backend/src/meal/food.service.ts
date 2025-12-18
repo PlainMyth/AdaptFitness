@@ -20,6 +20,10 @@ export class FoodService {
   private readonly OPENFOODFACTS_BASE_URL = 'https://world.openfoodfacts.org';
   private readonly OPENFOODFACTS_API_URL = `${this.OPENFOODFACTS_BASE_URL}/api/v0`;
   private readonly OPENFOODFACTS_SEARCH_URL = `${this.OPENFOODFACTS_BASE_URL}/cgi/search.pl`;
+  
+  // Simple in-memory cache for search results (expires after 5 minutes)
+  private searchCache: Map<string, { data: any; timestamp: number }> = new Map();
+  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
   constructor(private readonly httpService: HttpService) {}
 
@@ -46,19 +50,34 @@ export class FoodService {
         throw new BadRequestException('Search query must be at least 2 characters long');
       }
 
+      // Check cache first
+      const cacheKey = `${query.toLowerCase().trim()}_${page}_${pageSize}`;
+      const cached = this.searchCache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+        console.log(`Cache hit for query: ${query}`);
+        return cached.data;
+      }
+
       const url = this.OPENFOODFACTS_SEARCH_URL;
+      // Optimize: Request only essential fields to reduce response size and improve speed
+      // Request minimal fields - OpenFoodFacts will return less data, making responses faster
       const params = {
         search_terms: query.trim(),
         search_simple: '1',
         action: 'process',
         json: '1',
-        page_size: pageSize.toString(),
+        page_size: Math.min(pageSize, 15).toString(), // Reduced from 20 to 15 for faster responses
         page: page.toString(),
+        // Request only essential fields - this significantly reduces response size
         fields: 'code,product_name,product_name_en,brands,categories,image_url,nutriments,serving_size,serving_quantity',
+        sort_by: 'popularity', // Sort by popularity for better, more relevant results
       };
 
       const response = await firstValueFrom(
-        this.httpService.get<FoodSearchResponseDto>(url, { params })
+        this.httpService.get<FoodSearchResponseDto>(url, { 
+          params,
+          timeout: 15000, // 15 second timeout for OpenFoodFacts API
+        })
       );
 
       if (!response.data || !response.data.products) {
@@ -76,16 +95,43 @@ export class FoodService {
         .map(product => this.mapToSimplifiedFoodItem(product))
         .filter(food => food !== null);
 
-      return {
+      const result = {
         foods,
         totalCount: response.data.count || foods.length,
         page,
         pageSize,
         totalPages: Math.ceil((response.data.count || foods.length) / pageSize),
       };
+
+      // Cache the result
+      this.searchCache.set(cacheKey, {
+        data: result,
+        timestamp: Date.now(),
+      });
+
+      // Clean up old cache entries (keep cache size reasonable)
+      if (this.searchCache.size > 100) {
+        const now = Date.now();
+        for (const [key, value] of this.searchCache.entries()) {
+          if (now - value.timestamp > this.CACHE_TTL) {
+            this.searchCache.delete(key);
+          }
+        }
+      }
+
+      return result;
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error;
+      }
+
+      // Check if it's a timeout error
+      if (error?.code === 'ECONNABORTED' || error?.message?.includes('timeout')) {
+        console.error('OpenFoodFacts API timeout:', error);
+        throw new HttpException(
+          'Food search timed out. The external API may be slow. Please try again.',
+          HttpStatus.GATEWAY_TIMEOUT
+        );
       }
 
       console.error('Error searching foods from OpenFoodFacts:', error);
@@ -110,7 +156,9 @@ export class FoodService {
       const url = `${this.OPENFOODFACTS_API_URL}/product/${barcode.trim()}.json`;
 
       const response = await firstValueFrom(
-        this.httpService.get<{ status: number; product?: FoodItemDto }>(url)
+        this.httpService.get<{ status: number; product?: FoodItemDto }>(url, {
+          timeout: 15000, // 15 second timeout for OpenFoodFacts API
+        })
       );
 
       if (response.data.status === 0 || !response.data.product) {
@@ -142,6 +190,15 @@ export class FoodService {
     } catch (error) {
       if (error instanceof BadRequestException || error instanceof HttpException) {
         throw error;
+      }
+
+      // Check if it's a timeout error
+      if (error?.code === 'ECONNABORTED' || error?.message?.includes('timeout')) {
+        console.error('OpenFoodFacts API timeout for barcode lookup:', error);
+        throw new HttpException(
+          'Food lookup timed out. The external API may be slow. Please try again.',
+          HttpStatus.GATEWAY_TIMEOUT
+        );
       }
 
       console.error('Error fetching food by barcode from OpenFoodFacts:', error);

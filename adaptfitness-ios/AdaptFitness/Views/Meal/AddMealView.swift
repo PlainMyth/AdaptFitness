@@ -1,6 +1,5 @@
 //
 //  AddMealView.swift
-//  AdaptFitness
 //
 //  Created by AI Assistant
 //
@@ -22,6 +21,8 @@ struct AddMealView: View {
     @State private var fiber = ""
     @State private var sugar = ""
     @State private var sodium = ""
+    @State private var errorMessage: String?
+    @State private var isSaving = false
     
     let onMealAdded: (Meal) -> Void
     
@@ -112,6 +113,15 @@ struct AddMealView: View {
                         }
                     }
                 }
+                
+                // Error message section
+                if let error = errorMessage {
+                    Section {
+                        Text(error)
+                            .foregroundColor(.red)
+                            .font(.caption)
+                    }
+                }
             }
             .navigationTitle("Log Meal")
             .navigationBarTitleDisplayMode(.inline)
@@ -123,10 +133,14 @@ struct AddMealView: View {
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Save") {
-                        saveMeal()
+                    if isSaving {
+                        ProgressView()
+                    } else {
+                        Button("Save") {
+                            saveMeal()
+                        }
+                        .disabled(name.isEmpty || calories.isEmpty)
                     }
-                    .disabled(name.isEmpty || calories.isEmpty)
                 }
             }
         }
@@ -135,7 +149,13 @@ struct AddMealView: View {
     private func saveMeal() {
         guard !name.isEmpty,
               !calories.isEmpty,
-              let authToken = authManager.authToken else { return }
+              let authToken = authManager.authToken else {
+            errorMessage = "Please fill in all required fields"
+            return
+        }
+        
+        isSaving = true
+        errorMessage = nil
         
         let formatter = ISO8601DateFormatter()
         
@@ -159,12 +179,38 @@ struct AddMealView: View {
             do {
                 let newMeal = try await APIService.shared.createMeal(mealRequest, token: authToken)
                 await MainActor.run {
+                    isSaving = false
                     onMealAdded(newMeal)
                     dismiss()
                 }
+            } catch let error as APIError {
+                await MainActor.run {
+                    isSaving = false
+                    switch error {
+                    case .httpError(401, _):
+                        // Token expired or invalid - clear auth state
+                        authManager.handleTokenExpiration()
+                        errorMessage = "Your session has expired. Please log in again."
+                    case .httpError(let code, let message):
+                        errorMessage = message ?? "Failed to create meal (code: \(code))"
+                    case .unauthorized:
+                        authManager.handleTokenExpiration()
+                        errorMessage = "Not authenticated. Please log in."
+                    default:
+                        errorMessage = "Failed to create meal: \(error.localizedDescription)"
+                    }
+                }
             } catch {
-                print("Failed to create meal: \(error)")
-                // Handle error
+                await MainActor.run {
+                    isSaving = false
+                    let errorString = error.localizedDescription
+                    if errorString.contains("401") || errorString.contains("Unauthorized") {
+                        authManager.handleTokenExpiration()
+                        errorMessage = "Your session has expired. Please log in again."
+                    } else {
+                        errorMessage = "Failed to create meal: \(error.localizedDescription)"
+                    }
+                }
             }
         }
     }

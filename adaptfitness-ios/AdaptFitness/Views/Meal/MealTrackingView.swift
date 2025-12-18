@@ -82,7 +82,7 @@ struct MealTrackingView: View {
                     NutritionFactsView(food: food)
                 }
             }
-            .onChange(of: selectedFood?.id) { _ in
+            .onChange(of: selectedFood?.id) { oldValue, newValue in
                 if selectedFood != nil {
                     showingNutritionFacts = true
                     showingFoodSelection = false

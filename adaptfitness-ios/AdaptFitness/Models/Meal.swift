@@ -28,6 +28,12 @@ struct Meal: Codable, Identifiable {
     // Computed property for Date from mealTime string
     var date: Date? {
         let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = formatter.date(from: mealTime) {
+            return date
+        }
+        // Fallback: try without fractional seconds
+        formatter.formatOptions = [.withInternetDateTime]
         return formatter.date(from: mealTime)
     }
     

@@ -7,6 +7,7 @@ import SwiftUI
 
 struct NutritionFactsView: View {
     let food: SimplifiedFoodItem
+    let onMealAdded: ((Meal) -> Void)?
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var authManager = AuthManager.shared
     
@@ -14,6 +15,11 @@ struct NutritionFactsView: View {
     @State private var showMealTypePicker = false
     @State private var selectedMealType: MealType = .other
     @State private var errorMessage: String?
+    
+    init(food: SimplifiedFoodItem, onMealAdded: ((Meal) -> Void)? = nil) {
+        self.food = food
+        self.onMealAdded = onMealAdded
+    }
     
     private var nutritionInfo: NutritionInfo {
         food.nutritionPerServing ?? food.nutritionPer100g
@@ -214,14 +220,39 @@ struct NutritionFactsView: View {
         
         Task {
             do {
-                _ = try await APIService.shared.createMeal(mealRequest, token: token)
+                let newMeal = try await APIService.shared.createMeal(mealRequest, token: token)
                 await MainActor.run {
                     isAddingToMeal = false
+                    // Notify parent view that meal was added
+                    onMealAdded?(newMeal)
                     dismiss()
+                }
+            } catch let error as APIError {
+                await MainActor.run {
+                    switch error {
+                    case .httpError(401, _):
+                        // Token expired or invalid - clear auth state
+                        authManager.handleTokenExpiration()
+                        errorMessage = "Your session has expired. Please log in again."
+                    case .httpError(let code, let message):
+                        errorMessage = message ?? "Failed to add meal (code: \(code))"
+                    case .unauthorized:
+                        authManager.handleTokenExpiration()
+                        errorMessage = "Not authenticated. Please log in."
+                    default:
+                        errorMessage = "Failed to add meal: \(error.localizedDescription)"
+                    }
+                    isAddingToMeal = false
                 }
             } catch {
                 await MainActor.run {
-                    errorMessage = "Failed to add meal: \(error.localizedDescription)"
+                    let errorString = error.localizedDescription
+                    if errorString.contains("401") || errorString.contains("Unauthorized") {
+                        authManager.handleTokenExpiration()
+                        errorMessage = "Your session has expired. Please log in again."
+                    } else {
+                        errorMessage = "Failed to add meal: \(error.localizedDescription)"
+                    }
                     isAddingToMeal = false
                 }
             }
